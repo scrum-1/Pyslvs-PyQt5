@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from ..QtModules import *
 from .Ui_run_Path_Solving import Ui_Form as PathSolving_Form
-from ..calculation.pathSolving import WorkerThread
+from ..graphics.ChartGraphics import ChartDialog
+from .run_Path_Solving_progress import Path_Solving_progress_show
 from .run_Path_Solving_series import Path_Solving_series_show
 
 class Path_Solving_show(QWidget, PathSolving_Form):
@@ -9,37 +10,30 @@ class Path_Solving_show(QWidget, PathSolving_Form):
     deletePathPoint = pyqtSignal(int)
     moveupPathPoint = pyqtSignal(int)
     movedownPathPoint = pyqtSignal(int)
-    mergeMechanism = pyqtSignal(list)
-    deleteResult = pyqtSignal(int)
     mergeResult = pyqtSignal(int)
-    def __init__(self, mask, data, resultData, width, parent=None):
+    def __init__(self, FileState, data, resultData, width, parent=None):
         super(Path_Solving_show, self).__init__(parent)
         self.setupUi(self)
-        self.mechanism_data = list()
-        self.work = WorkerThread()
-        self.work.done.connect(self.finish)
-        self.X_coordinate.setValidator(mask)
-        self.Y_coordinate.setValidator(mask)
-        for e in data: self.Point_list.addItem('('+str(e['x'])+", "+str(e['y'])+')')
+        self.FileState = FileState
+        self.mechanism_data = resultData
+        self.path = data
+        for e in data: self.Point_list.addItem("({}, {})".format(e['x'], e['y']))
         for e in resultData: self.addResult(e)
-        self.Point_list_Count()
-        self.isMerge()
+        self.isGenerate()
+        self.isGetResult()
     
     @pyqtSlot()
     def on_clearAll_clicked(self):
         self.Point_list.setCurrentRow(0)
         for i in reversed(range(self.Point_list.count()+1)): self.on_remove_clicked()
-        self.Point_list_Count()
+        self.isGenerate()
     
     @pyqtSlot()
     def on_series_clicked(self):
-        dlg = Path_Solving_series_show()
+        dlg = Path_Solving_series_show(self)
         dlg.show()
         if dlg.exec_():
-            start = int(dlg.startNum.value()*10)
-            end = int(dlg.endNum.value()*10)
-            diff = int(dlg.diffNum.value()*10)
-            for e in range(start, end, diff): self.on_add_clicked(e/10, e/10)
+            for e in dlg.path: self.on_add_clicked(e[0], e[1])
     
     @pyqtSlot()
     def on_moveUp_clicked(self):
@@ -65,88 +59,164 @@ class Path_Solving_show(QWidget, PathSolving_Form):
     
     def addPath(self, x, y):
         self.Point_list.addItem('({}, {})'.format(x, y))
-        self.Point_list_Count()
+        self.isGenerate()
     
     @pyqtSlot()
     def on_add_clicked(self, x=False, y=False):
         if x is False:
-            x=float(self.X_coordinate.text() if self.X_coordinate.text()!=str() else self.X_coordinate.placeholderText())
-            y=float(self.Y_coordinate.text() if self.Y_coordinate.text()!=str() else self.Y_coordinate.placeholderText())
+            x = self.X_coordinate.value()
+            y = self.Y_coordinate.value()
         self.addPathPoint.emit(x, y)
         self.Point_list.addItem("({}, {})".format(x, y))
-        self.Point_list_Count()
+        self.isGenerate()
     @pyqtSlot()
     def on_remove_clicked(self):
         if self.Point_list.currentRow()>-1:
             self.deletePathPoint.emit(self.Point_list.currentRow())
             self.Point_list.takeItem(self.Point_list.currentRow())
-            self.Point_list_Count()
+            self.isGenerate()
     
-    def Point_list_Count(self):
+    def isGenerate(self):
         self.pointNum.setText(
             "<html><head/><body><p><span style=\" font-size:12pt; color:#00aa00;\">"+str(self.Point_list.count())+"</span></p></body></html>")
-        self.Generate.setEnabled(self.Point_list.count()>1)
+        n = self.Point_list.count()>1
+        for a, b in zip(
+            [self.AxMin, self.AyMin, self.DxMin, self.DyMin, self.IMin, self.LMin, self.FMin, self.AMin],
+            [self.AxMax, self.AyMax, self.DxMax, self.DyMax, self.IMax, self.LMax, self.FMax, self.AMax]
+            ): n &= a.value()<=b.value()
+        self.Generate.setEnabled(n)
     
-    @pyqtSlot(list)
-    def start(self, path):
+    @pyqtSlot()
+    def on_Generate_clicked(self):
         type_num = 0 if self.type0.isChecked() else (1 if self.type1.isChecked() else 2)
-        upper = [self.AxMax.value(), self.AyMax.value(), self.DxMax.value(), self.DyMax.value()]+[self.LMax.value()]*5
-        lower = [self.AxMin.value(), self.AyMin.value(), self.DxMin.value(), self.DyMin.value()]+[self.LMin.value()]*5
-        self.work.setPath(path, upper, lower, type_num)
-        print('Start Path Solving...')
-        self.work.start()
-        self.algorithmPanel.setEnabled(False)
-        self.Tabs.setEnabled(False)
-        self.Generate.setEnabled(False)
-        self.timeShow.setText("<html><head/><body><p><span style=\" font-size:12pt; color:#ffff0000\">Calculating...</span></p></body></html>")
-        self.timePanel.setEnabled(False)
-        self.progressBar.setRange(0, 0)
-    @pyqtSlot(bool)
-    def stop(self, p0=True): self.work.stop()
-    
-    @pyqtSlot(dict, int)
-    def finish(self, mechanism, time_spand):
-        self.mechanism_data = [mechanism]
-        self.mergeMechanism.emit(self.mechanism_data)
-        self.addResult(mechanism)
-        self.algorithmPanel.setEnabled(True)
-        self.Tabs.setEnabled(True)
-        self.Tabs.setCurrentIndex(self.Tabs.count()-1)
-        self.Generate.setEnabled(True)
-        self.timePanel.setEnabled(True)
-        self.progressBar.setRange(0, 100)
-        sec = time_spand%60
-        mins = int(time_spand/60)
-        self.timeShow.setText("<html><head/><body><p><span style=\" font-size:12pt\">"+str(mins)+" [min] "+str(sec)+" [s]</span></p></body></html>")
-        print('Finished.')
+        upper = ([self.AxMax.value(), self.AyMax.value(), self.DxMax.value(), self.DyMax.value()]+
+            [self.IMax.value()]+[self.LMax.value()]+[self.FMax.value()]+[self.LMax.value()]*2)
+        lower = ([self.AxMin.value(), self.AyMin.value(), self.DxMin.value(), self.DyMin.value()]+
+            [self.IMin.value()]+[self.LMin.value()]+[self.FMin.value()]+[self.LMin.value()]*2)
+        dlg = Path_Solving_progress_show(self.path, upper, lower, self.AMin.value(), self.AMax.value(),
+            type_num, self.maxGen.value(), self.report.value()/100, self)
+        dlg.show()
+        if dlg.exec_():
+            self.mechanism_data.append(dlg.mechanism)
+            self.addResult(dlg.mechanism)
+            sec = dlg.time_spand%60
+            mins = int(dlg.time_spand/60)
+            self.timeShow.setText("<html><head/><body><p><span style=\" font-size:10pt\">{} [min] {} [s]</span></p></body></html>".format(mins, sec))
+            self.Tabs.setCurrentIndex(0)
+            print('Finished.')
     
     def addResult(self, e):
-        item = QListWidgetItem(e['Algorithm']+(": {} ... {}".format(e['path'][:3], e['path'][-3:]) if len(e['path'])>6 else ": {}".format(e['path'])))
-        item.setToolTip("[{}]\nAx: {}\nAy: {}\nDx: {}\nDy: {}\nL0: {}\nL1: {}\nL2: {}\nL3: {}\nL4: {}\nTime spand: {:.2f} s".format(
-            e['Algorithm'], e['Ax'], e['Ay'], e['Dx'], e['Dy'], e['L0'], e['L1'], e['L2'], e['L3'], e['L4'], e['time']))
+        keys = sorted(list(e.keys()))
+        item = QListWidgetItem("{} ({} gen)".format(e['Algorithm'], e['maxGen']))
+        item.setToolTip('\n'.join(['[{}]'.format(e['Algorithm'])]+[
+            "{}: {}".format(k, e[k]) for k in keys if not k in ['Algorithm', 'TimeAndFitness']]))
         self.Result_list.addItem(item)
-        self.isMerge()
     
     @pyqtSlot(int)
-    def on_Result_list_currentRowChanged(self, cr): self.isMerge()
-    
-    def isMerge(self):
-        n = self.Result_list.count()>0 and self.Result_list.currentRow()>-1
-        self.mergeButton.setEnabled(n)
-        self.deleteButton.setEnabled(n)
+    def on_Result_list_currentRowChanged(self, cr): self.isGetResult()
     
     @pyqtSlot()
     def on_deleteButton_clicked(self):
-        self.deleteResult.emit(self.Result_list.currentRow())
-        self.Result_list.takeItem(self.Result_list.currentRow())
-        self.isMerge()
+        row = self.Result_list.currentRow()
+        del self.mechanism_data[row]
+        self.Result_list.takeItem(row)
+        self.isGetResult()
+    
+    def isGetResult(self):
+        n = (self.Result_list.count()>0 and self.Result_list.currentRow()>-1)
+        self.mergeButton.setEnabled(n)
+        self.deleteButton.setEnabled(n)
+        self.copySettings.setEnabled(n)
+    
+    @pyqtSlot(QModelIndex)
+    def on_Result_list_doubleClicked(self, index):
+        if self.Result_list.currentRow()!=-1: self.on_mergeButton_clicked()
     
     @pyqtSlot()
     def on_mergeButton_clicked(self):
-        reply = QMessageBox.question(self, 'Prompt Message', "Merge this result to your canvas?\nDo you want to remove the results at the same time?",
-            (QMessageBox.Apply | QMessageBox.Discard | QMessageBox.Cancel), QMessageBox.Apply)
-        if reply==QMessageBox.Apply:
-            self.mergeResult.emit(self.Result_list.currentRow())
-            self.deleteResult.emit(self.Result_list.currentRow())
-            self.Result_list.takeItem(self.Result_list.currentRow())
-        elif reply==QMessageBox.Discard: self.mergeResult.emit(self.Result_list.currentRow())
+        reply = QMessageBox.question(self, 'Prompt Message', "Merge this result to your canvas?",
+            (QMessageBox.Apply | QMessageBox.Cancel), QMessageBox.Apply)
+        if reply==QMessageBox.Apply: self.mergeResult.emit(self.Result_list.currentRow())
+    
+    @pyqtSlot()
+    def on_getTimeAndFitness_clicked(self):
+        results = [[e['Algorithm'], e['maxGen'], e['TimeAndFitness']] for e in self.mechanism_data]
+        dlg = ChartDialog("Convergence Value", results, self)
+        dlg.show()
+    
+    @pyqtSlot()
+    def on_copySettings_clicked(self):
+        args = self.mechanism_data[self.Result_list.currentRow()]
+        if args['Algorithm']=='Genetic': self.type0.setChecked(True)
+        elif args['Algorithm']=='Firefly': self.type1.setChecked(True)
+        elif args['Algorithm']=="Differtial Evolution": self.type2.setChecked(True)
+        self.isCustomize.setChecked(True)
+        self.setArgs(maxGen=args['maxGen'], report=args['report']*100,
+            AxMin=args['AxMin'], AyMin=args['AyMin'], DxMin=args['DxMin'], DyMin=args['DyMin'],
+            IMin=arg['IMin'], LMin=args['LMin'], FMin=arg['FMin'], AMin=args['minAngle'],
+            AxMax=args['AxMax'], AyMax=args['AyMax'], DxMax=args['DxMax'], DyMax=args['DyMax'],
+            IMax=arg['IMax'], LMax=args['LMax'], FMax=arg['FMax'], AMax=args['maxAngle'])
+        self.on_clearAll_clicked()
+        for e in args['path']: self.on_add_clicked(e[0], e[1])
+    
+    @pyqtSlot()
+    def on_isCustomize_clicked(self): self.setArgs()
+    @pyqtSlot()
+    def on_setDefault_clicked(self): self.setArgs()
+    def setArgs(self, maxGen=1500, report=1, AxMin=-50., AyMin=-50., DxMin=-50., DyMin=-50., IMin=5., LMin=5., FMin=5., AMin=0.,
+            AxMax=50., AyMax=50., DxMax=50., DyMax=50., IMax=50., LMax=50., FMax=50., AMax=360.):
+        self.maxGen.setValue(maxGen)
+        self.report.setValue(report)
+        self.AxMin.setValue(AxMin)
+        self.AyMin.setValue(AyMin)
+        self.DxMin.setValue(DxMin)
+        self.DyMin.setValue(DyMin)
+        self.IMin.setValue(IMin)
+        self.LMin.setValue(LMin)
+        self.FMin.setValue(FMin)
+        self.AMin.setValue(AMin)
+        self.AxMax.setValue(AxMax)
+        self.AyMax.setValue(AyMax)
+        self.DxMax.setValue(DxMax)
+        self.DyMax.setValue(DyMax)
+        self.IMax.setValue(IMax)
+        self.LMax.setValue(LMax)
+        self.FMax.setValue(FMax)
+        self.AMax.setValue(AMax)
+    
+    @pyqtSlot(float)
+    def on_maxGen_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_report_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AxMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AyMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_DxMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_DyMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_IMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_LMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_FMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AMin_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AxMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AyMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_DxMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_DyMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_IMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_LMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_FMax_valueChanged(self, p0): self.isGenerate()
+    @pyqtSlot(float)
+    def on_AMax_valueChanged(self, p0): self.isGenerate()

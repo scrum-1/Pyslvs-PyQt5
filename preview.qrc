@@ -10,6 +10,7 @@
     <file>icons/preview/PLAP.png</file>
     <file>icons/preview/PLLP.png</file>
     <file>icons/preview/PLPP.png</file>
+    <file>icons/preview/PPP.png</file>
     <file>icons/preview/TSMergePointsOnly.png</file>
     <file>icons/preview/TSMergeSliderPointsOnly.png</file>
     <file>icons/preview/TSMergeL0.png</file>
@@ -17,6 +18,10 @@
     <file>icons/preview/TSMergeChain.png</file>
     <file>icons/preview/TSMergeL0R0.png</file>
     <file>icons/preview/TSMergeSlider.png</file>
+    <file>icons/preview/4Bar.png</file>
+    <file>icons/preview/8Bar.png</file>
+    <file>icons/preview/4Bar_triangle.png</file>
+    <file>icons/preview/8Bar_triangle.png</file>
     <!--Tool tip preview pictures-->
     <file>icons/tooltips/PathTrack.png</file>
     <file>icons/tooltips/PathSolving.png</file>

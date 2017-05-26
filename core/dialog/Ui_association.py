@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/ahshoe/Desktop/Pyslvs-PyQt5/core/dialog/association.ui'
+# Form implementation generated from reading ui file '/home/ahshoe/Desktop/mde1a1/src/core/dialog/association.ui'
 #
 # Created by: PyQt5 UI code generator 5.8
 #
@@ -163,7 +163,7 @@ class Ui_Dialog(object):
         self.tableWidget.setSortingEnabled(__sortingEnabled)
         self.lineBox.setTitle(_translate("Dialog", "Linkage"))
         self.lineLable.setText(_translate("Dialog", "None"))
-        self.chainBox.setTitle(_translate("Dialog", "Stay chain"))
+        self.chainBox.setTitle(_translate("Dialog", "Fixed Chain"))
         self.chainLable.setText(_translate("Dialog", "None"))
         self.shaftBox.setTitle(_translate("Dialog", "Shaft"))
         self.shaftLable.setText(_translate("Dialog", "None"))

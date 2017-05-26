@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-5.1.dtd">
 <!-- eric project file for project Pyslvs-PyQt5 -->
-<!-- Saved: 2017-03-31, 16:37:58 -->
-<!-- Copyright (C) 2017 ,  -->
+<!-- Saved: 2017-05-17, 00:25:05 -->
+<!-- Copyright (C) 2017 Yuan, daan0014119@gmail.com -->
 <Project version="5.1">
-  <Language>en_US</Language>
+  <Language></Language>
   <Hash>8830517c87a377b45c7328ed685a32516abd547e</Hash>
   <ProgLanguage mixed="0">Python3</ProgLanguage>
   <ProjectType>PyQt5</ProjectType>
-  <Version>0.4.0</Version>
-  <Author></Author>
-  <Email></Email>
+  <Version>0.7.0</Version>
+  <Author>Yuan</Author>
+  <Email>daan0014119@gmail.com</Email>
   <Sources>
     <Source>README.md</Source>
     <Source>core/QtModules.py</Source>
@@ -18,35 +18,37 @@
     <Source>core/Ui_main.py</Source>
     <Source>core/__init__.py</Source>
     <Source>core/calculation/__init__.py</Source>
-    <Source>core/calculation/calculation.py</Source>
-    <Source>core/calculation/canvas_0.py</Source>
-    <Source>core/calculation/canvas_1.py</Source>
-    <Source>core/calculation/color.py</Source>
+    <Source>core/calculation/algorithm.py</Source>
     <Source>core/calculation/pathSolving.py</Source>
     <Source>core/calculation/pathTrack.py</Source>
+    <Source>core/calculation/planeSolving.py</Source>
     <Source>core/dialog/Ui_association.py</Source>
     <Source>core/dialog/Ui_batchMoving.py</Source>
     <Source>core/dialog/Ui_delete.py</Source>
     <Source>core/dialog/Ui_replacePoint.py</Source>
+    <Source>core/dialog/Ui_run_Path_Track.py</Source>
     <Source>core/dialog/__init__.py</Source>
     <Source>core/dialog/association.py</Source>
     <Source>core/dialog/batchMoving.py</Source>
     <Source>core/dialog/delete.py</Source>
     <Source>core/dialog/replacePoint.py</Source>
-    <Source>core/draw/Ui_edit_chain.py</Source>
-    <Source>core/draw/Ui_edit_link.py</Source>
-    <Source>core/draw/Ui_edit_point.py</Source>
-    <Source>core/draw/__init__.py</Source>
-    <Source>core/draw/edit_chain.py</Source>
-    <Source>core/draw/edit_link.py</Source>
-    <Source>core/draw/edit_point.py</Source>
-    <Source>core/info/Ui_editFileInfo.py</Source>
+    <Source>core/dialog/run_Path_Track.py</Source>
+    <Source>core/entities/Ui_edit_chain.py</Source>
+    <Source>core/entities/Ui_edit_link.py</Source>
+    <Source>core/entities/Ui_edit_point.py</Source>
+    <Source>core/entities/__init__.py</Source>
+    <Source>core/entities/edit_chain.py</Source>
+    <Source>core/entities/edit_link.py</Source>
+    <Source>core/entities/edit_point.py</Source>
+    <Source>core/graphics/ChartGraphics.py</Source>
+    <Source>core/graphics/__init__.py</Source>
+    <Source>core/graphics/canvas_0.py</Source>
+    <Source>core/graphics/color.py</Source>
     <Source>core/info/Ui_fileInfo.py</Source>
     <Source>core/info/Ui_help.py</Source>
     <Source>core/info/Ui_info.py</Source>
     <Source>core/info/Ui_path_point_data.py</Source>
     <Source>core/info/__init__.py</Source>
-    <Source>core/info/editFileInfo.py</Source>
     <Source>core/info/fileInfo.py</Source>
     <Source>core/info/info.py</Source>
     <Source>core/info/path_point_data.py</Source>
@@ -57,10 +59,13 @@
     <Source>core/io/dxfForm/model.py</Source>
     <Source>core/io/dxfForm/sketch.py</Source>
     <Source>core/io/dxfType.py</Source>
+    <Source>core/io/elements.py</Source>
     <Source>core/io/example.py</Source>
     <Source>core/io/fileForm.py</Source>
     <Source>core/io/listProcess.py</Source>
+    <Source>core/io/loggingHandler.py</Source>
     <Source>core/io/script.py</Source>
+    <Source>core/io/scriptType.py</Source>
     <Source>core/io/slvsForm/__init__.py</Source>
     <Source>core/io/slvsForm/assembly.py</Source>
     <Source>core/io/slvsForm/chain.py</Source>
@@ -69,40 +74,37 @@
     <Source>core/io/slvsType.py</Source>
     <Source>core/io/undoRedo.py</Source>
     <Source>core/kernel/__init__.py</Source>
-    <Source>core/kernel/py34/__init__.py</Source>
-    <Source>core/kernel/py34/slvs.py</Source>
-    <Source>core/kernel/py35/__init__.py</Source>
-    <Source>core/kernel/py35/slvs.py</Source>
-    <Source>core/kernel/py35w/__init__.py</Source>
-    <Source>core/kernel/py35w/slvs.py</Source>
-    <Source>core/kernel/pyslvs_generate/__init__.py</Source>
-    <Source>core/kernel/pyslvs_generate/py34/__init__.py</Source>
-    <Source>core/kernel/pyslvs_generate/py35/__init__.py</Source>
-    <Source>core/kernel/pyslvs_generate/py35w/__init__.py</Source>
+    <Source>core/kernel/kernel_getter.py</Source>
+    <Source>core/kernel/py34.py</Source>
+    <Source>core/kernel/py35.py</Source>
+    <Source>core/kernel/py35w.py</Source>
+    <Source>core/kernel/py36w.py</Source>
     <Source>core/kernel/pyslvs_triangle_solver/TS.py</Source>
     <Source>core/kernel/pyslvs_triangle_solver/__init__.py</Source>
     <Source>core/main.py</Source>
-    <Source>core/modules.py</Source>
+    <Source>core/main_modules.py</Source>
     <Source>core/panel/Ui_run_AuxLine.py</Source>
     <Source>core/panel/Ui_run_Drive_rod.py</Source>
     <Source>core/panel/Ui_run_Drive_shaft.py</Source>
     <Source>core/panel/Ui_run_Measurement.py</Source>
     <Source>core/panel/Ui_run_Path_Solving.py</Source>
+    <Source>core/panel/Ui_run_Path_Solving_progress.py</Source>
     <Source>core/panel/Ui_run_Path_Solving_series.py</Source>
-    <Source>core/panel/Ui_run_Path_Track.py</Source>
     <Source>core/panel/Ui_run_Triangle_Solver.py</Source>
     <Source>core/panel/Ui_run_Triangle_Solver_directionItem.py</Source>
     <Source>core/panel/Ui_run_Triangle_Solver_edit.py</Source>
+    <Source>core/panel/Ui_run_Triangle_Solver_template.py</Source>
     <Source>core/panel/__init__.py</Source>
     <Source>core/panel/run_AuxLine.py</Source>
     <Source>core/panel/run_Drive_rod.py</Source>
     <Source>core/panel/run_Drive_shaft.py</Source>
     <Source>core/panel/run_Measurement.py</Source>
     <Source>core/panel/run_Path_Solving.py</Source>
+    <Source>core/panel/run_Path_Solving_progress.py</Source>
     <Source>core/panel/run_Path_Solving_series.py</Source>
-    <Source>core/panel/run_Path_Track.py</Source>
     <Source>core/panel/run_Triangle_Solver.py</Source>
     <Source>core/panel/run_Triangle_Solver_edit.py</Source>
+    <Source>core/panel/run_Triangle_Solver_template.py</Source>
     <Source>core/simulate/Ui_edit_rod.py</Source>
     <Source>core/simulate/Ui_edit_shaft.py</Source>
     <Source>core/simulate/Ui_edit_slider.py</Source>
@@ -120,10 +122,10 @@
     <Form>core/dialog/batchMoving.ui</Form>
     <Form>core/dialog/delete.ui</Form>
     <Form>core/dialog/replacePoint.ui</Form>
-    <Form>core/draw/edit_chain.ui</Form>
-    <Form>core/draw/edit_link.ui</Form>
-    <Form>core/draw/edit_point.ui</Form>
-    <Form>core/info/editFileInfo.ui</Form>
+    <Form>core/dialog/run_Path_Track.ui</Form>
+    <Form>core/entities/edit_chain.ui</Form>
+    <Form>core/entities/edit_link.ui</Form>
+    <Form>core/entities/edit_point.ui</Form>
     <Form>core/info/fileInfo.ui</Form>
     <Form>core/info/info.ui</Form>
     <Form>core/info/path_point_data.ui</Form>
@@ -136,10 +138,11 @@
     <Form>core/panel/run_Drive_shaft.ui</Form>
     <Form>core/panel/run_Measurement.ui</Form>
     <Form>core/panel/run_Path_Solving.ui</Form>
+    <Form>core/panel/run_Path_Solving_progress.ui</Form>
     <Form>core/panel/run_Path_Solving_series.ui</Form>
-    <Form>core/panel/run_Path_Track.ui</Form>
     <Form>core/panel/run_Triangle_Solver.ui</Form>
     <Form>core/panel/run_Triangle_Solver_edit.ui</Form>
+    <Form>core/panel/run_Triangle_Solver_template.ui</Form>
     <Form>core/simulate/edit_rod.ui</Form>
     <Form>core/simulate/edit_shaft.ui</Form>
     <Form>core/simulate/edit_slider.ui</Form>
@@ -156,6 +159,106 @@
   <MainScript>launch_pyslvs.py</MainScript>
   <Vcs>
     <VcsType>None</VcsType>
+    <VcsOptions>
+      <dict>
+        <key>
+          <string>add</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>checkout</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>commit</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>diff</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>export</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>global</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>history</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>log</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>remove</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>status</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>tag</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+        <key>
+          <string>update</string>
+        </key>
+        <value>
+          <list>
+            <string></string>
+          </list>
+        </value>
+      </dict>
+    </VcsOptions>
   </Vcs>
   <FiletypeAssociations>
     <FiletypeAssociation pattern="*.idl" type="INTERFACES"/>
