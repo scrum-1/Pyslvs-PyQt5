@@ -1,2 +1,6 @@
 dxfwrite
 numpy
+cython
+pyzmq
+openpyxl
+psutil

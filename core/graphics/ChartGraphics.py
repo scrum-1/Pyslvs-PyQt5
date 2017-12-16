@@ -1,49 +1,116 @@
 # -*- coding: utf-8 -*-
+##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
+##Copyright (C) 2016-2017 Yuan Chang
+##E-mail: pyslvs@gmail.com
+##
+##This program is free software; you can redistribute it and/or modify
+##it under the terms of the GNU Affero General Public License as published by
+##the Free Software Foundation; either version 3 of the License, or
+##(at your option) any later version.
+##
+##This program is distributed in the hope that it will be useful,
+##but WITHOUT ANY WARRANTY; without even the implied warranty of
+##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##GNU Affero General Public License for more details.
+##
+##You should have received a copy of the GNU Affero General Public License
+##along with this program; if not, write to the Free Software
+##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
 from ..QtModules import *
+"""This part using PyQtChart module."""
 from PyQt5.QtChart import *
 
 class ChartDialog(QDialog):
-    def __init__(self, Title, DataSet=list(), parent=None):
+    def __init__(self, Title, mechanism_data=list(), parent=None):
         super(ChartDialog, self).__init__(parent)
         self.setWindowTitle('Chart')
         self.setWindowFlags(self.windowFlags() | Qt.WindowMaximizeButtonHint)
         self.setSizeGripEnabled(True)
         self.setModal(True)
         self.setMinimumSize(QSize(800, 600))
+        self.Title = Title
+        self.mechanism_data = mechanism_data
+        #Widgets
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(6, 6, 6, 6)
+        self.tabWidget = QTabWidget(self)
+        self.setChart("Fitness / Generation Chart", 0, 1)
+        self.setChart("Generation / Time Chart", 2, 0)
+        self.setChart("Fitness / Time Chart", 2, 1)
+        main_layout.addWidget(self.tabWidget)
+    
+    def setChart(self, tabName, posX, posY):
         chart = QChart()
-        chart.setTitle(Title)
+        chart.setTitle(self.Title)
         chart.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        chart.legend().setAlignment(Qt.AlignRight)
+        legend = chart.legend()
+        legend.setAlignment(Qt.AlignBottom)
+        legend.setFont(QFont(legend.font().family(), 12, QFont.Medium))
+        if self.mechanism_data:
+            '''
+            #posX / posY = [0] / [1] / [2]
+            #TimeAndFitness = [[(gen, fitness, time), ...], ...]
+            '''
+            if type(self.mechanism_data[0]['TimeAndFitness'][0])==float:
+                TimeAndFitness = [
+                    [(data['generateData']['maxGen']*i/len(data['TimeAndFitness']), Tnf, 0)
+                    for i, Tnf in enumerate(data['TimeAndFitness'])]
+                    for data in self.mechanism_data]
+            else:
+                #Just copy from mechanism_data
+                TimeAndFitness = [[Tnf for Tnf in data['TimeAndFitness']] for data in self.mechanism_data]
         axisX = QCategoryAxis()
         axisY = QValueAxis()
         axisX.setLabelsPosition(QCategoryAxis.AxisLabelsPositionOnValue)
+        axisX.setMin(0)
         axisY.setTickCount(11)
-        if len(DataSet)>0:
-            maxGen = max([data[1] for data in DataSet])
-            chart.setTitle("{} (max {} generations)".format(Title, maxGen))
-            for i in range(0, maxGen+1, int(maxGen/10)): axisX.append(str(i), i)
+        #X maxima
+        if self.mechanism_data:
+            maximaX = int(max([max([Tnf[posX] for Tnf in data]) for data in TimeAndFitness])*100)
+            axisX.setMax(maximaX)
+            i10 = int(maximaX/10)
+            if i10:
+                for i in range(0, maximaX+1, i10):
+                    axisX.append(str(i/100), i)
+            else:
+                for i in range(0, 1000, 100):
+                    axisX.append(str(i/100), i)
+        #Y maxima
+        if self.mechanism_data:
+            maximaY = max([max([Tnf[posY] for Tnf in data]) for data in TimeAndFitness])+10
+        else:
+            maximaY = 100
+        maximaY -= maximaY%10
+        axisY.setRange(0., maximaY)
+        #Add axis
         chart.addAxis(axisX, Qt.AlignBottom)
         chart.addAxis(axisY, Qt.AlignLeft)
-        for data in DataSet:
+        #Append datasets
+        for data in self.mechanism_data:
             line = QLineSeries()
             scatter = QScatterSeries()
-            line.setName("{} ({} gen)".format(data[0], data[1]))
+            gen = data['generateData']['maxGen']
+            Tnf = TimeAndFitness[self.mechanism_data.index(data)]
+            points = Tnf[:-1] if Tnf[-1]==Tnf[-2] else Tnf
+            line.setName("{} ({} gen, {} chrom)".format(data['Algorithm'], gen, data['mechanismParams']['VARS']))
             scatter.setMarkerSize(7)
             scatter.setColor(QColor(110, 190, 30))
-            for i, e in enumerate(data[2][:-1]):
-                x = round(i*data[1]/(len(data[2])-2), 0)
-                line.append(QPointF(x, e))
-                scatter.append(QPointF(x, e))
+            for i, e in enumerate(points):
+                y = e[posY]
+                x = e[posX]*100
+                line.append(QPointF(x, y))
+                scatter.append(QPointF(x, y))
             for series in [line, scatter]:
                 chart.addSeries(series)
                 series.attachAxis(axisX)
                 series.attachAxis(axisY)
             chart.legend().markers(scatter)[0].setVisible(False)
-        maxima = max([max(e[2]) for e in DataSet])+10
-        maxima -= maxima%10
-        axisY.setRange(0., maxima if DataSet else 100.)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(*([2]*4))
+        #Add chart into tab widget
+        widget = QWidget()
+        self.tabWidget.addTab(widget, QIcon(), tabName)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(2, 2, 2, 2)
         chartView = QChartView(chart)
         chartView.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(chartView)

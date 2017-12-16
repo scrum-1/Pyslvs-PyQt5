@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
+##Copyright (C) 2016-2017 Yuan Chang
+##E-mail: pyslvs@gmail.com
+##
+##This program is free software; you can redistribute it and/or modify
+##it under the terms of the GNU Affero General Public License as published by
+##the Free Software Foundation; either version 3 of the License, or
+##(at your option) any later version.
+##
+##This program is distributed in the hope that it will be useful,
+##but WITHOUT ANY WARRANTY; without even the implied warranty of
+##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##GNU Affero General Public License for more details.
+##
+##You should have received a copy of the GNU Affero General Public License
+##along with this program; if not, write to the Free Software
+##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 def slvsProcessScript(Point, Line, Chain, Shaft, Slider, Rod):
     script = """'''This code is generate by Pyslvs'''
@@ -29,7 +46,8 @@ Constraint.dragged(Workplane1, Point0)
         classScript += "p{} = Sys.add_param({})\n".format(bx, e.cx)
         classScript += "p{} = Sys.add_param({})\n".format(by, e.cy)
         classScript += "Point{} = Point2d(Workplane1, p{}, p{})\n".format(i+1, bx, by)
-        if e.fix: classScript += "Constraint.dragged(Workplane1, Point{})\n".format(i+1)
+        if e.fix:
+            classScript += "Constraint.dragged(Workplane1, Point{})\n".format(i+1)
     for e in Chain:
         classScript += "Constraint.distance({}, Workplane1, Point{}, Point{})\n".format(e.p1p2, e.p1+1, e.p2+1)
         classScript += "Constraint.distance({}, Workplane1, Point{}, Point{})\n".format(e.p2p3, e.p2+1, e.p3+1)

@@ -1,7 +1,25 @@
 # -*- coding: utf-8 -*-
+##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
+##Copyright (C) 2016-2017 Yuan Chang
+##E-mail: pyslvs@gmail.com
+##
+##This program is free software; you can redistribute it and/or modify
+##it under the terms of the GNU Affero General Public License as published by
+##the Free Software Foundation; either version 3 of the License, or
+##(at your option) any later version.
+##
+##This program is distributed in the hope that it will be useful,
+##but WITHOUT ANY WARRANTY; without even the implied warranty of
+##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##GNU Affero General Public License for more details.
+##
+##You should have received a copy of the GNU Affero General Public License
+##along with this program; if not, write to the Free Software
+##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
 from ..QtModules import *
 from .scriptType import slvsProcessScript
-_translate = QCoreApplication.translate
+tr = QCoreApplication.translate
 from .Ui_script import Ui_Info_Dialog
 
 class highlightRule:
@@ -62,13 +80,14 @@ class Script_Dialog(QDialog, Ui_Info_Dialog):
     def on_copy_clicked(self):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.script.toPlainText())
-        self.copy.setText(_translate("Info_Dialog", "Copied!"))
+        self.copy.setText(tr("Info_Dialog", "Copied!"))
     
     @pyqtSlot()
     def on_save_clicked(self):
         fileName, _ = QFileDialog.getSaveFileName(self, 'Save file...', self.Environment_variables+'/'+self.fileName+'.py', 'Python3 Script(*.py)')
         if fileName:
-            if QFileInfo(fileName).suffix()!='py': fileName = fileName+'.py'
+            if QFileInfo(fileName).suffix()!='py':
+                fileName = fileName+'.py'
             with open(fileName, 'w', newline="") as f:
                 f.write(self.script.toPlainText())
             print("Successful Saved: [{}]".format(fileName))
