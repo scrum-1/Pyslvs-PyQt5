@@ -22,38 +22,48 @@ import platform, argparse
 from ..QtModules import *
 from .Ui_about import Ui_About_Dialog
 
-VERSION = (0, 8, 1, 'release')
+VERSION = (0, 9, 0, 'beta4')
 from PyQt5.QtCore import qVersion
 from PyQt5.QtCore import PYQT_VERSION_STR as pyqtVersion
-from sip import SIP_VERSION_STR as sipVersion
-from PyQt5.Qsci import QSCINTILLA_VERSION_STR as qsciVersion
-INFO = ["Pyslvs {}.{}.{}({})".format(*VERSION),
+
+INFO = [
+    "Pyslvs {}.{}.{}({})".format(*VERSION),
     "OS Type: {} {} [{}]".format(platform.system(), platform.release(), platform.machine()),
     "Python Version: {v.major}.{v.minor}.{v.micro}({v.releaselevel})".format(v=version_info),
     "Python Compiler: {}".format(platform.python_compiler()),
     "Qt Version: {}".format(qVersion().strip()),
-    "PyQt Version: {}".format(pyqtVersion.strip()),
-    "Sip Version: {}".format(sipVersion.strip()),
-    "QScintilla Version: {}".format(qsciVersion.strip())]
+    "PyQt Version: {}".format(pyqtVersion.strip())
+]
 
+POWERBY = [
+    "Python IDE Eric 6",
+    "PyQt 5",
+    "dxfwrite",
+    "Cython",
+    "PyZMQ",
+    "openpyxl",
+    "psutil",
+    "peewee",
+    "Lark-parser",
+    "NetworkX",
+    "Pydot"
+]
+
+#--help
 parser = argparse.ArgumentParser(
     description="Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.",
-    epilog="Power by Python IDE Eric-6, PyQt-5, dxfwrite, Cython, PyZMQ, openpyxl.")
-parser.add_argument('-v', '--version', action='version', help="show version infomations and exit", version='{}.{}.{}({})'.format(*VERSION))
+    epilog="Power by {}.".format(", ".join(POWERBY))
+)
+parser.add_argument('-v', '--version', action='version', help="show version infomations and exit", version=INFO[0])
 parser.add_argument('r', metavar='FILE PATH', default=False, nargs='?', type=str, help="read workbook from the file path")
 parser.add_argument('-i', metavar='START PATH', default=False, nargs='?', type=str, help="start Pyslvs in the specified path")
 parser.add_argument('-w', action='store_true', help="show rebuild warning of canvas")
 parser.add_argument('-f', '--fusion', action='store_true', help="run Pyslvs in Fusion style")
 parser.add_argument('--full-screen', action='store_true', help="start Pyslvs with full-screen mode")
-parser.add_argument('--file-data', action='store_true', help="display the file data in command-line when opening")
 parser.add_argument('--server', metavar='PORT', default=False, nargs='?', type=str, help="start ZMQ server")
 parser.add_argument('-d', '--debug-mode', action='store_true', help="do not connect to GUI console when opening")
+parser.add_argument('--test', action='store_true', help="startup the program to test imported modules")
 args = parser.parse_args()
-
-def show_info():
-    print('\n'.join(INFO))
-    print('-'*7)
-    return args
 
 ## Turn simple string to html format.
 html = lambda s: "<html><head/><body>{}</body></html>".format(s.replace('\n', '<br/>'))
@@ -86,7 +96,8 @@ class version_show(QDialog, Ui_About_Dialog):
             "Change canvas appearance.",
             "Draw dynamic simulation path with any point in the machinery.",
             "Using triangle iterate the mechanism results.")+content(
-            "If you want to know about more, you can reference by our website.")))
+            "If you want to know about more, you can reference by our website."))
+        )
         self.Versions.setText(html(orderList(*INFO)))
         self.Arguments.setText(html(content(
             "Startup arguments are as follows:")+orderList(
@@ -94,7 +105,6 @@ class version_show(QDialog, Ui_About_Dialog):
             "Start Path: {}".format(args.i),
             "Enable solving warning: {}".format(args.w),
             "Fusion style: {}".format(args.fusion),
-            "Show file data in console: {}".format(args.file_data),
             "Debug mode: {}".format(args.debug_mode))+content(
-            "Using the \"-h\" argument to view help."
-            )))
+            "Using the \"-h\" argument to view the help."))
+        )

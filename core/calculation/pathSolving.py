@@ -71,8 +71,9 @@ class WorkerThread(QThread):
                 'time':time_spand,
                 'Ax':FP[0], 'Ay':FP[1],
                 'Dx':FP[2], 'Dy':FP[3],
-                'interruptedGeneration':str(TnF[-1][0]) if self.stoped else 'False',
-                'mechanismParams':self.mechanismParams,
+                'targetPath':self.mechanismParams['targetPath'],
+                'interrupted':str(TnF[-1][0]) if self.stoped else 'False',
+                'type':'8Bar' if self.mechanismParams['Link']=='L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10' else '4Bar',
                 'generateData':self.generateData,
                 'algorithmPrams':self.algorithmPrams,
                 'hardwareInfo':{
@@ -83,11 +84,11 @@ class WorkerThread(QThread):
                 'TimeAndFitness':TnF}
             for index in range(len(self.mechanismParams['Link'].split(','))):
                 mechanism['L{}'.format(index)] = FP[4+index]
-            print('cost time: {} [s]'.format(time_spand))
+            print("cost time: {} [s]".format(time_spand))
             self.result.emit(mechanism, time_spand)
         T1 = timeit.default_timer()
         totalTime = round(T1-T0, 2)
-        print('total cost time: {} [s]'.format(totalTime))
+        print("total cost time: {} [s]".format(totalTime))
         self.done.emit()
     
     def generateProcess(self):

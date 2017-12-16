@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from math import sqrt, sin, cos, radians
-import logging, traceback
+import logging
+import traceback
 
 ##Directions:
 ##[Direction('p1':Point1, 'p2':Point2, 'len1':Line1, ('len2':Line2, 'angle':angle ...)), ...]
@@ -31,14 +32,14 @@ class Direction:
         return "<{}>".format(self.items())
 
 class solver:
-    def __init__(self, Directions=list(), showError=True, *keywords):
+    def __init__(self, Directions=[], showError=True, *keywords):
         self.showError = showError
         self.set(Directions)
     def set(self, Directions):
         self.Directions = Directions
     
     def answer(self):
-        answer = self.Iterator() if self.Parser() else list()
+        answer = self.Iterator() if self.Parser() else []
         self.Directions.clear()
         return answer
     
@@ -64,7 +65,7 @@ class solver:
         return True
     
     def Iterator(self):
-        results = list()
+        results = []
         for e in self.Directions:
             p1 = results[e.p1] if type(e.p1)==int else e.p1
             p2 = results[e.p2] if type(e.p2)==int else e.p2
@@ -100,12 +101,6 @@ class solver:
                 L0*loop*(-x0 + x1)*sin(a0)/sqrt((-x0 + x1)**2 + (-y0 + y1)**2) + L0*(-y0 + y1)*cos(a0)/sqrt((-x0 + x1)**2 + (-y0 + y1)**2) + y0
             )
         except Exception as e:
-            print("x0 = {}".format(x0))
-            print("y0 = {}".format(y0))
-            print("x1 = {}".format(x1))
-            print("y1 = {}".format(y1))
-            print("L0 = {}".format(L0))
-            print("a0 = {}".format(a0))
             return self.ErrorBack(e)
     
     def PLLP(self, A, L0, R0, B, other=False):
