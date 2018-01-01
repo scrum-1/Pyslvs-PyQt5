@@ -7,9 +7,10 @@ __pycache__/
 *.so
 *.pyd
 *.o*
-core/kernel/pyslvs_algorithm/*.c
-core/kernel/python_solvespace/slvs.py
-core/kernel/python_solvespace/obj*
+core/libs/pyslvs_algorithm/*.c
+core/libs/pyslvs_topologic/*.c
+core/libs/python_solvespace/slvs.py
+core/libs/python_solvespace/obj*
 *.cxx
 *.def
 *.lib
@@ -32,6 +33,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+AppImageAssistant
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -94,6 +96,7 @@ celerybeat-schedule
 .venv
 venv/
 ENV/
+out/
 
 # Spyder project settings
 .spyderproject

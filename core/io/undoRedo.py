@@ -18,221 +18,272 @@
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 from ..QtModules import *
-from ..graphics.color import colorIcons
-from copy import copy, deepcopy
+from copy import deepcopy
 
-def writeTable(table, rowPosition, name, Args):
-    name_set = QTableWidgetItem("{}{}".format(name, rowPosition))
-    name_set.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-    table.setItem(rowPosition, 0, name_set)
-    for i, e in enumerate(Args):
-        if type(e) in [str, float, int]:
-            content = 'Point{}'.format(e) if type(e)==int else e
-            try:
-                table.setItem(rowPosition, i+1, QTableWidgetItem(str(round(float(content), 4))))
-            except:
-                try:
-                    table.setItem(rowPosition, i+1, QTableWidgetItem(colorIcons()[content], content))
-                except KeyError:
-                    table.setItem(rowPosition, i+1, QTableWidgetItem(content))
-        elif type(e)==bool:
-            checkbox = QTableWidgetItem(str())
-            checkbox.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            checkbox.setCheckState(Qt.Checked if e else Qt.Unchecked)
-            table.setItem(rowPosition, i+1, checkbox)
+noNoneString = lambda l: [e for e in l if e]
 
-def writeTS(table, row, Direction):
-    table.setItem(row, 0, QTableWidgetItem(Direction.Type))
-    for i in [2, 3]:
-        e = [Direction.p1, Direction.p2][i-2]
-        Item = QTableWidgetItem('Result{}'.format(e+1) if type(e)==int else "({:.02f}, {:.02f})".format(e[0], e[1]) if type(e)==tuple else e)
-        if type(e)==tuple:
-            Item.setToolTip("x = {}\ny = {}".format(e[0], e[1]))
-        table.setItem(row, i, Item)
-    condition = [
-        "{}: {}".format(k, (v if k!='merge' else ["Points only", "Slider"][v] if Direction.Type=='PLPP' else
-        ["Points only", "Linking L0", "Linking R0", "Fixed Chain", "Linking L0 & R0"][v])) for k, v in Direction.items().items()]
-    conditionItem = QTableWidgetItem(', '.join(condition))
-    conditionItem.setToolTip('\n'.join(condition))
-    table.setItem(row, 4, conditionItem)
+'''
+The add and delete command has only add and delete.
+The add command need to edit Points or Links list after it added to table.
+The delete command need to clear Points or Links list before it deleted from table.
+'''
 
-class editTableCommand(QUndoCommand):
-    def __init__(self, table, name, edit, Args):
+class addTableCommand(QUndoCommand):
+    def __init__(self, table):
         QUndoCommand.__init__(self)
-        self.table = table #Pointer - QTableWidget
-        self.name = name
-        self.edit = edit
-        self.Args = Args
-        if not edit is False:
-            self.oldArgs = list()
-            for column in range(1, table.columnCount()):
-                item = table.item(edit, column)
-                self.oldArgs.append(item.text() if item.text()!='' else item.checkState()!=Qt.Unchecked)
+        self.table = table
     
     def redo(self):
-        isEdit = not self.edit is False
-        rowPosition = self.edit if isEdit else self.table.rowCount()
-        if not isEdit:
-            self.table.insertRow(rowPosition)
-        writeTable(self.table, rowPosition, self.name, self.Args)
+        row = self.table.rowCount()
+        self.table.insertRow(row)
+        for column in range(row):
+            self.table.setItem(row, column, QTableWidgetItem(''))
+    
     def undo(self):
-        isEdit = not self.edit is False
-        if not isEdit:
-            self.table.removeRow(self.table.rowCount()-1)
-        else:
-            writeTable(self.table, self.edit, self.name, self.oldArgs)
+        self.table.removeRow(self.table.rowCount()-1)
 
 class deleteTableCommand(QUndoCommand):
-    def __init__(self, table, name, index, isRename=True):
+    def __init__(self, table, row, isRename):
         QUndoCommand.__init__(self)
         self.table = table
-        self.name = name
-        self.index = index
-        self.isRename = isRename
-        self.oldArgs = list()
-        for column in range(1, table.columnCount()):
-            item = table.item(index, column)
-            self.oldArgs += [item.text() if item.text()!=str() else item.checkState()!=Qt.Unchecked]
-    
-    def redo(self):
-        self.table.removeRow(self.index)
-        if self.isRename:
-            for j in range(self.index, self.table.rowCount()):
-                self.table.setItem(j, 0, QTableWidgetItem(self.name+str(j)))
-    def undo(self):
-        self.table.insertRow(self.index)
-        writeTable(self.table, self.index, self.name, self.oldArgs)
-        if self.isRename:
-            for j in range(self.index, self.table.rowCount()):
-                self.table.setItem(j, 0, QTableWidgetItem(self.name+str(j)))
-
-class changePointNumCommand(QUndoCommand):
-    def __init__(self, table, pos, row, column, name='Point'):
-        QUndoCommand.__init__(self)
-        self.table = table
-        self.pos = pos
         self.row = row
-        self.column = column
-        self.name = name
-        self.oldPos = int(table.item(row, column).text().replace(name, str()))
+        self.isRename = isRename
     
     def redo(self):
-        cell = QTableWidgetItem(self.name+str(self.pos) if not self.name=='n' else str(self.pos))
-        self.table.setItem(self.row, self.column, cell)
+        self.table.removeRow(self.row)
+        if self.isRename:
+            self.table.rename(self.row)
+    
     def undo(self):
-        cell = QTableWidgetItem(self.name+str(self.oldPos))
-        self.table.setItem(self.row, self.column, cell)
+        if self.isRename:
+            self.table.rename(self.row)
+        self.table.insertRow(self.row)
+        for column in range(self.table.columnCount()):
+            self.table.setItem(self.row, column, QTableWidgetItem(''))
 
-class setPathCommand(QUndoCommand):
-    def __init__(self, data, path):
+#Fix sequence number when deleting a point.
+class fixSequenceNumberCommand(QUndoCommand):
+    def __init__(self, table, row, q):
         QUndoCommand.__init__(self)
+        self.table = table
+        self.row = row
+        self.q = q
+    
+    def redo(self):
+        self.sorting(True)
+    
+    def undo(self):
+        self.sorting(False)
+    
+    #Sorting point number by q.
+    def sorting(self, bs):
+        item = self.table.item(self.row, 2)
+        if item.text():
+            points = [int(p.replace('Point', '')) for p in item.text().split(',')]
+            if bs:
+                points = [p-1 if p>self.q else p for p in points]
+            else:
+                points = [p+1 if p>=self.q else p for p in points]
+            points = ['Point{}'.format(p) for p in points]
+            item.setText(','.join(points))
+
+'''
+The edit command need to know who is included by the VPoint or VLink.
+'''
+
+class editPointTableCommand(QUndoCommand):
+    def __init__(self, PointTable, row, LinkTable, Args):
+        QUndoCommand.__init__(self)
+        self.PointTable = PointTable
+        self.row = row
+        self.LinkTable = LinkTable
+        '''
+        Links: str,
+        Type: int,
+        Color: str,
+        X, Y
+        '''
+        self.Args = tuple(Args)
+        self.OldArgs = self.PointTable.rowTexts(row)[1:-1]
+        #Links: Tuple[str] -> Set[str]
+        newLinks = set(self.Args[0].split(','))
+        oldLinks = set(self.OldArgs[0].split(','))
+        self.NewLinkRows = []
+        self.OldLinkRows = []
+        for row in range(self.LinkTable.rowCount()):
+            linkName = self.LinkTable.item(row, 0).text()
+            if linkName in newLinks - oldLinks:
+                self.NewLinkRows.append(row)
+            if linkName in oldLinks - newLinks:
+                self.OldLinkRows.append(row)
+        self.NewLinkRows = tuple(self.NewLinkRows)
+        self.OldLinkRows = tuple(self.OldLinkRows)
+    
+    def redo(self):
+        self.PointTable.editArgs(self.row, *self.Args)
+        self.writeRows(self.NewLinkRows, self.OldLinkRows)
+    
+    def undo(self):
+        self.writeRows(self.OldLinkRows, self.NewLinkRows)
+        self.PointTable.editArgs(self.row, *self.OldArgs)
+    
+    def writeRows(self, rows1, rows2):
+        #Append the point that relate with these links.
+        for row in rows1:
+            newPoints = self.LinkTable.item(row, 2).text().split(',')+['Point{}'.format(self.row)]
+            item = QTableWidgetItem(','.join(noNoneString(newPoints)))
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.LinkTable.setItem(row, 2, item)
+        #Remove the point that irrelevant with these links.
+        for row in rows2:
+            newPoints = self.LinkTable.item(row, 2).text().split(',')
+            newPoints.remove('Point{}'.format(self.row))
+            item = QTableWidgetItem(','.join(noNoneString(newPoints)))
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.LinkTable.setItem(row, 2, item)
+
+class editLinkTableCommand(QUndoCommand):
+    def __init__(self, LinkTable, row, PointTable, Args):
+        QUndoCommand.__init__(self)
+        self.LinkTable = LinkTable
+        self.row = row
+        self.PointTable = PointTable
+        '''
+        name: str,
+        color: str,
+        points: str
+        '''
+        self.Args = tuple(Args)
+        self.OldArgs = self.LinkTable.rowTexts(row)
+        #Points: Tuple[int]
+        newPoints = self.Args[2].split(',')
+        oldPoints = self.OldArgs[2].split(',')
+        newPoints = set(int(index.replace('Point', '')) for index in noNoneString(newPoints))
+        oldPoints = set(int(index.replace('Point', '')) for index in noNoneString(oldPoints))
+        self.NewPointRows = tuple(newPoints - oldPoints)
+        self.OldPointRows = tuple(oldPoints - newPoints)
+    
+    def redo(self):
+        self.LinkTable.editArgs(self.row, *self.Args)
+        self.rename(self.Args, self.OldArgs)
+        self.writeRows(self.Args[0], self.NewPointRows, self.OldPointRows)
+    
+    def undo(self):
+        self.writeRows(self.OldArgs[0], self.OldPointRows, self.NewPointRows)
+        self.rename(self.OldArgs, self.Args)
+        self.LinkTable.editArgs(self.row, *self.OldArgs)
+    
+    def rename(self, Args1, Args2):
+        for row in [int(index.replace('Point', '')) for index in noNoneString(Args2[2].split(','))]:
+            newLinks = self.PointTable.item(row, 1).text().split(',')
+            item = QTableWidgetItem(','.join(noNoneString([w.replace(Args2[0], Args1[0]) for w in newLinks])))
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.PointTable.setItem(row, 1, item)
+    
+    def writeRows(self, name, rows1, rows2):
+        #Append the link that relate with these points.
+        for row in rows1:
+            newLinks = self.PointTable.item(row, 1).text().split(',')+[name]
+            item = QTableWidgetItem(','.join(noNoneString(newLinks)))
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.PointTable.setItem(row, 1, item)
+        #Remove the link that irrelevant with these points.
+        for row in rows2:
+            newLinks = self.PointTable.item(row, 1).text().split(',')
+            if name:
+                newLinks.remove(name)
+            item = QTableWidgetItem(','.join(noNoneString(newLinks)))
+            item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.PointTable.setItem(row, 1, item)
+
+class addPathCommand(QUndoCommand):
+    def __init__(self, widget, name, data, path):
+        QUndoCommand.__init__(self)
+        self.widget = widget
+        self.name = name
         self.data = data
         self.path = deepcopy(path)
-        self.oldPath = deepcopy(data)
     
     def redo(self):
-        self.data.clear()
-        self.data += self.path
+        self.data[self.name] = self.path
+        self.widget.addItem("{}: {}".format(self.name, ", ".join("[{}]".format(i) for i, d in enumerate(self.path) if d)))
+    
     def undo(self):
-        self.data.clear()
-        self.data += self.oldPath
+        self.widget.takeItem(self.widget.count()-1)
+        del self.data[self.name]
 
-class clearPathCommand(QUndoCommand):
-    def __init__(self, data):
+class deletePathCommand(QUndoCommand):
+    def __init__(self, row, widget, data):
         QUndoCommand.__init__(self)
+        self.row = row
+        self.widget = widget
         self.data = data
-        self.oldPath = deepcopy(data)
     
     def redo(self):
-        self.data.clear()
+        self.oldItem = self.widget.takeItem(self.row)
+        name = self.oldItem.text().split(':')[0]
+        self.oldPath = self.data[name]
+        del self.data[name]
+    
     def undo(self):
-        self.data += self.oldPath
+        self.data[self.oldItem.text().split(':')[0]] = self.oldPath
+        self.widget.addItem(self.oldItem)
 
-class demoValueCommand(QUndoCommand):
-    def __init__(self, table, index, value, column):
+class addStorageCommand(QUndoCommand):
+    def __init__(self, name, widget, mechanism):
         QUndoCommand.__init__(self)
-        self.table = table
-        self.index = index
-        self.value = value
-        self.column = column
-        self.oldValue = float(table.item(index, self.column).text())
+        self.name = name
+        self.widget = widget
+        self.mechanism = mechanism
     
     def redo(self):
-        self.table.setItem(self.index, self.column, QTableWidgetItem(str(self.value)))
+        item = QListWidgetItem(self.name)
+        item.expr = self.mechanism
+        item.setIcon(QIcon(QPixmap(":/icons/mechanism.png")))
+        self.widget.addItem(item)
+    
     def undo(self):
-        self.table.setItem(self.index, self.column, QTableWidgetItem(str(self.oldValue)))
+        self.widget.takeItem(self.widget.count()-1)
 
-class TSinitCommand(QUndoCommand):
-    def __init__(self, TSDirections, Directions):
+class addStorageNameCommand(QUndoCommand):
+    def __init__(self, name, widget):
         QUndoCommand.__init__(self)
-        self.TSDirections = TSDirections
-        self.Directions = copy(Directions)
-        self.oldDirections = copy(TSDirections)
+        self.name = name
+        self.widget = widget
     
     def redo(self):
-        self.TSDirections.clear()
-        self.TSDirections += self.Directions
+        self.widget.setText(self.name)
+    
     def undo(self):
-        self.TSDirections.clear()
-        self.TSDirections += self.oldDirections
+        self.widget.clear()
 
-class TSeditCommand(QUndoCommand):
-    def __init__(self, TSDirections, table, Direction, edit):
+class deleteStorageCommand(QUndoCommand):
+    def __init__(self, row, widget):
         QUndoCommand.__init__(self)
-        self.TSDirections = TSDirections
-        self.table = table
-        self.Direction = copy(Direction)
-        self.edit = edit
-        if not self.edit is False:
-            self.oldDirection = copy(TSDirections[edit])
+        self.row = row
+        self.widget = widget
+        self.name = widget.item(row).text()
+        self.mechanism = widget.item(row).expr
     
     def redo(self):
-        if self.edit is False:
-            self.TSDirections.append(self.Direction)
-            try:
-                row = self.table.rowCount()
-                self.table.insertRow(row)
-            except:
-                pass
-        else:
-            self.TSDirections[self.edit] = self.Direction
-            row = self.edit
-        try:
-            writeTS(self.table, row, self.Direction)
-        except:
-            pass
+        self.widget.takeItem(self.row)
+    
     def undo(self):
-        if self.edit is False:
-            self.TSDirections.pop()
-            try:
-                self.table.removeRow(self.table.rowCount()-1)
-            except:
-                pass
-        else:
-            self.TSDirections[self.edit] = self.oldDirection
-            try:
-                writeTS(self.table, self.edit, self.Direction)
-            except:
-                pass
+        item = QListWidgetItem(self.name)
+        item.expr = self.mechanism
+        item.setIcon(QIcon(QPixmap(":/icons/mechanism.png")))
+        self.widget.insertItem(self.row, item)
 
-class TSdeleteCommand(QUndoCommand):
-    def __init__(self, TSDirections, table):
+class clearStorageNameCommand(QUndoCommand):
+    def __init__(self, widget):
         QUndoCommand.__init__(self)
-        self.TSDirections = TSDirections
-        self.oldDirection = copy(TSDirections[-1])
-        self.table = table
+        self.name = widget.text()
+        if not self.name:
+            self.name = widget.placeholderText()
+        self.widget = widget
     
     def redo(self):
-        self.TSDirections.pop()
-        try:
-            self.table.removeRow(self.table.rowCount()-1)
-        except:
-            pass
+        self.widget.clear()
+    
     def undo(self):
-        row = self.table.rowCount()
-        self.TSDirections.append(self.oldDirection)
-        self.table.insertRow(row)
-        try:
-            writeTS(self.table, row, self.oldDirection)
-        except:
-            pass
+        self.widget.setText(self.name)

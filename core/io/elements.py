@@ -17,325 +17,198 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
+from math import sqrt, degrees, atan2
+from networkx import Graph
+from ..graphics.color import colorQt
+from typing import Tuple
+
 class VPoint:
-    def __init__(self, x=0., y=0., fix=False, color='Red'):
-        self.set(x, y, fix)
-        self.setColor(color)
-        self._cx = self._x
-        self._cy = self._y
+    __slots__ = ('__links', '__type', '__angle', '__color', '__x', '__y', '__c')
+    Jtype = ('R', 'P', 'RP')
+    
+    def __init__(self,
+        links: str ='',
+        type: int =0,
+        angle: float =0.,
+        color: str ='Red',
+        x: float =0.,
+        y: float =0.
+    ):
+        self.set(links, type, angle, color, x, y)
+        self.reset()
     
     @property
-    def x(self):
-        return self._x
-    @property
-    def y(self):
-        return self._y
-    @x.setter
-    def x(self, x):
-        self._x = x
-    @y.setter
-    def y(self, y):
-        self._y = y
-    @property
-    def fix(self):
-        return self._fix
-    @property
-    def color(self):
-        return self._color
-    @property
-    def cx(self):
-        return self._cx
-    @property
-    def cy(self):
-        return self._cy
+    def links(self):
+        return self.__links
     
-    def set(self, x=0., y=0., fix=False):
-        self._x = x
-        self._y = y
-        self._fix = fix
+    def setLinks(self, links: str):
+        self.__links = tuple(filter(lambda a: a!='', links.split(',')))
+    
+    @property
+    def type(self) -> int:
+        return self.__type
+    
+    @property
+    def typeSTR(self) -> str:
+        return self.Jtype[self.type]
+    
+    def setType(self, type: int):
+        self.__type = type
+    
+    @property
+    def angle(self) -> float:
+        return self.__angle
+    
+    def setAngle(self, angle: float):
+        self.__angle = angle
+    
+    @property
+    def color(self) -> 'QColor':
+        return colorQt(self.__color)
+    
+    @property
+    def colorSTR(self) -> str:
+        return self.__color
+    
+    def setColor(self, color: str):
+        self.__color = color
+    
+    @property
+    def x(self) -> float:
+        return self.__x
+    
+    @property
+    def y(self) -> float:
+        return self.__y
+    
+    def setCoordinate(self, x: float, y: float):
+        self.__x = x
+        self.__y = y
+    
+    @property
+    def cx(self) -> float:
+        return self.__c[0][0]
+    
+    @property
+    def cy(self) -> float:
+        return self.__c[0][1]
+    
+    #Get the coordinates of all pin.
+    @property
+    def c(self) -> Tuple[Tuple[float, float]]:
+        return self.__c
+    
+    def set(self, links, type, angle, color, x, y):
+        self.__links = tuple(filter(lambda a: a!='', links.split(',')))
+        self.__type = type
+        self.__angle = angle
+        self.__color = color
+        self.__x = x
+        self.__y = y
     
     def round(self, d=8):
-        self._x = round(self._x, d)
-        self._y = round(self._y, d)
+        self.__c = tuple(tuple(round(p, d) for p in coordinate) for coordinate in self.__c)
     
-    def setColor(self, color='Red'):
-        self._color = color
-    
-    def move(self, x=None, y=None):
-        if x==None:
-            x = self._x
-        if y==None:
-            y = self._y
-        self._cx = x
-        self._cy = y
+    def move(self, *coordinates):
+        self.__c = tuple(coordinates)
     
     def reset(self):
-        self._x = self._cx
-        self._y = self._cy
+        if self.type==1 or self.type==2:
+            self.__c = tuple((self.x, self.y) for i in range(len(self.links)))
+        else:
+            self.__c = ((self.x, self.y),)
     
-    def items(self, index=0):
-        return ('Point{}'.format(index), self.x, self.y, self.fix, self.color)
-    def items_tags(self, index=0):
-        return ('Point{}'.format(index), ('x', self.x), ('y', self.y), ('fix', self.fix), ('color', self.color))
+    def distance(self, p):
+        return round(sqrt((self.x-p.x)**2 + (self.y-p.y)**2), 4)
     
-    def __str__(self):
-        return "<Point x={v.x} y={v.y} fix={v.fix} cx={v.cx} cy={v.cy}>".format(v=self)
+    def slopeAngle(self, p):
+        return round(degrees(atan2(p.y-self.y, p.x-self.x)), 4)
+    
+    @property
+    def expr(self):
+        return "J[{}, color[{}], P[{}], L[{}]]".format(
+            "{}, A[{}]".format(self.typeSTR, self.angle) if self.typeSTR!='R' else 'R',
+            self.colorSTR,
+            "{}, {}".format(self.x, self.y),
+            ", ".join(l for l in self.links)
+        )
+    
+    def __repr__(self):
+        return "VPoint({p.links}, {p.type}, {p.angle}, {p.c})".format(p=self)
 
-class VLine:
-    def __init__(self, start=0, end=0, len=0.):
-        self.set(start, end, len)
+class VLink:
+    __slots__ = ('__name', '__color', '__points')
+    
+    def __init__(self, name: str, color: str, points: Tuple[int]):
+        self.set(name, color, points)
     
     @property
-    def start(self):
-        return self._start
-    @property
-    def end(self):
-        return self._end
-    @property
-    def len(self):
-        return self._len
+    def name(self) -> str:
+        return self.__name
     
-    def set(self, start=VPoint(), end=VPoint(), len=0.):
-        self._start = start
-        self._end = end
-        self._len = len
+    def setName(self, name: str):
+        self.__name = name
     
-    def items(self, index=0):
-        return ('Line{}'.format(index), self.start, self.end, self.len)
-    def items_tags(self, index=0):
-        return ('Line{}'.format(index), ('start', self.start), ('end', self.end), ('len', self.len))
+    @property
+    def color(self) -> 'QColor':
+        return colorQt(self.__color)
+    
+    @property
+    def colorSTR(self) -> str:
+        return self.__color
+    
+    def setColor(self, color: str):
+        self.__color = color
+    
+    @property
+    def points(self) -> Tuple[int]:
+        return self.__points
+    
+    def setPoints(self, points: Tuple[int]):
+        self.__points = points
+    
+    def set(self, name, color, points):
+        self.__name = name
+        self.__color = color
+        self.__points = points
     
     def __contains__(self, point):
-        return point==self._start or point==self._end
-    def __str__(self):
-        return "<Line start={v.start} end={v.end} len={v.len}>".format(v=self)
+        return point in self.points
+    
+    def __repr__(self):
+        return "VLink('{l.name}', {l.points})".format(l=self)
 
-class VChain:
-    def __init__(self, p1=VPoint(), p2=0, p3=0, p1p2=0., p2p3=0., p1p3=0.):
-        self.set(p1, p2, p3, p1p2, p2p3, p1p3)
-    
-    @property
-    def p1(self):
-        return self._p1
-    @property
-    def p2(self):
-        return self._p2
-    @property
-    def p3(self):
-        return self._p3
-    @property
-    def p1p2(self):
-        return self._p1p2
-    @property
-    def p2p3(self):
-        return self._p2p3
-    @property
-    def p1p3(self):
-        return self._p1p3
-    
-    def set(self, p1=0, p2=0, p3=0, p1p2=0., p2p3=0., p1p3=0.):
-        self._p1 = p1
-        self._p2 = p2
-        self._p3 = p3
-        self._p1p2 = p1p2
-        self._p2p3 = p2p3
-        self._p1p3 = p1p3
-    
-    def items(self, index=0):
-        return ('Chain{}'.format(index), self.p1, self.p2, self.p3, self.p1p2, self.p2p3, self.p1p3)
-    def items_tags(self, index=0):
-        return ('Chain{}'.format(index), ('p1', self.p1), ('p2', self.p2), ('p3', self.p3), ('p1p2', self.p1p2), ('p2p3', self.p2p3), ('p1p3', self.p1p3))
-    
-    def __contains__(self, point):
-        return point==self._p1 or point==self._p2 or point==self._p3
-    def __str__(self):
-        return "<Chain p1={v.p1} p2={v.p2} p3={v.p3} p1p2={v.p1p2} p2p3={v.p2p3} p1p3={v.p1p3}>".format(v=self)
+#Generalization chain
+def v_to_graph(jointData: Tuple[VPoint,], linkData: Tuple[VLink,]):
+    G = Graph()
+    #Links name for RP joint.
+    k = len(linkData)
+    used_point = []
+    for i, vlink in enumerate(linkData):
+        for p in vlink.points:
+            if p in used_point:
+                continue
+            match = [m for m, vlink_ in enumerate(linkData) if i!=m and (p in vlink_.points)]
+            for m in match:
+                if jointData[p].type==2:
+                    G.add_edge(i, k)
+                    G.add_edge(k, m)
+                    k += 1
+                else:
+                    G.add_edge(i, m)
+            used_point.append(p)
+    return G
 
-class VShaft:
-    def __init__(self, cen=0, ref=0, start=0., end=360., demo=0.):
-        self.set(cen, ref, start, end, demo)
-    
-    @property
-    def cen(self):
-        return self._cen
-    @property
-    def ref(self):
-        return self._ref
-    @property
-    def start(self):
-        return self._start
-    @property
-    def end(self):
-        return self._end
-    @property
-    def demo(self):
-        return self._demo
-    @demo.setter
-    def demo(self, demo):
-        self._demo = demo
-    
-    def set(self, cen=0, ref=0, start=0., end=360., demo=0.):
-        self._cen = cen
-        self._ref = ref
-        self._start = start
-        self._end = end
-        self._demo = demo
-    
-    def drive(self, demo):
-        if demo>self._start and demo<self._end:
-            self._demo = demo
-    
-    def items(self, index=0):
-        return ('Shaft{}'.format(index), self.cen, self.ref, self.start, self.end, self.demo)
-    def items_tags(self, index=0):
-        return ('Shaft{}'.format(index), ('cen', self.cen), ('ref', self.ref), ('start', self.start), ('end', self.end), ('demo', self.demo))
-    
-    def __contains__(self, point):
-        return point==self._cen or point==self._ref
-    def __str__(self):
-        return "<Shaft cen={v.cen} ref={v.ref} start={v.start}, end={v.end} demo={v.demo}".format(v=self)
-
-class VSlider:
-    def __init__(self, cen=0, start=0, end=0):
-        self.set(cen, start, end)
-    
-    @property
-    def cen(self):
-        return self._cen
-    @property
-    def start(self):
-        return self._start
-    @property
-    def end(self):
-        return self._end
-    
-    def set(self, cen=0, start=0, end=0):
-        self._cen = cen
-        self._start = start
-        self._end = end
-    
-    def items(self, index=0):
-        return ('Slider{}'.format(index), self.cen, self.start, self.end)
-    def items_tags(self, index=0):
-        return ('Slider{}'.format(index), ('cen', self.cen), ('start', self.start), ('end', self.end))
-    
-    def __contains__(self, point):
-        return point==self._cen or point==self._start or point==self._end
-    def __str__(self):
-        return "<Slider cen={v.cen} start={v.start} end={v.end}>".format(v=self)
-
-class VRod(VSlider):
-    def __init__(self, cen=0, start=0, end=0, pos=0.):
-        self.set(cen, start, end, pos)
-    
-    @property
-    def pos(self):
-        return self._pos
-    @pos.setter
-    def pos(self, pos):
-        self._pos = pos
-    
-    def set(self, cen=0, start=0, end=0, pos=0.):
-        super(VRod, self).set(cen, start, end)
-        self._pos = pos
-    
-    def items(self, index=0):
-        return ('Rod{}'.format(index), self.cen, self.start, self.end, self.pos)
-    def items_tags(self, index=0):
-        return ('Rod{}'.format(index), ('cen', self.cen), ('start', self.start), ('end', self.end), ('pos', self.pos))
-    
-    def __str__(self):
-        return "<Rod cen={v.cen} start={v.start} end={v.end} pos={v.pos}>".format(v=self)
-
-class VParameter:
-    def __init__(self, val=0., commit=''):
-        self.set(val, commit)
-    @property
-    def val(self):
-        return self._val
-    @property
-    def commit(self):
-        return self._commit
-    
-    def set(self, val=0., commit=''):
-        self._val = val
-        self._commit = commit
-    
-    def items(self, index=0):
-        return ('n{}'.format(index), self.val, self.commit)
-    def items_tags(self, index=0):
-        return ('n{}'.format(index), ('val', self.val), ('commit', self.commit))
-    
-    def __str__(self):
-        return "<Parameter val={v.val} commit=\"{v.commit}\">".format(v=self)
-
-class VPath:
-    def __init__(self, point=0, points=list(), show=True):
-        self.set(point, points, show)
-    
-    @property
-    def point(self):
-        return self._point
-    @property
-    def path(self):
-        return self._path
-    @property
-    def show(self):
-        return self._show
-    @show.setter
-    def show(self, show):
-        self._show = show
-    
-    def set(self, point=0, points=list(), show=True):
-        self._point = point
-        self._path = list()
-        self._show = show
-        if points:
-            for p in points:
-                PointType = type(p)
-                if PointType==tuple or PointType==list or p==None:
-                    #(x, y)
-                    self._path.append(p)
-    
-    def isBroken(self):
-        for point in self.path:
-            if point is False or point[0] is False:
-                return True
-        return False
-    
-    def __str__(self):
-        return "<Path point={v.point} path={v.path}>".format(v=self)
-
-class VPaths:
-    def __init__(self, shaft=0, paths=list()):
-        self.set(shaft, paths)
-    @property
-    def shaft(self):
-        return self._shaft
-    @property
-    def paths(self):
-        return self._paths
-    
-    def set(self, shaft=0, paths=list()):
-        self._shaft = shaft
-        self._paths = list()
-        if paths:
-            for path in paths:
-                if type(path)==VPath:
-                    self._paths.append(path)
-    
-    def isBroken(self):
-        for path in self.paths:
-            if path.isBroken():
-                return True
-        return False
-    
-    def __str__(self):
-        return "<Paths shaft={v.shaft} paths={v.paths}>".format(v=self)
-
-if __name__=='__main__':
-    a = VPath(1, (None, (0, 2)))
-    b = VPath(2, ((3, 5), (0, 2)))
-    print(a.path)
-    c = VPaths(0, (a, b))
-    print(c.paths)
+#Solvespace edges
+def v_to_slvs(jointData: Tuple[VPoint,], linkData: Tuple[VLink,]):
+    edges = []
+    for vlink in linkData:
+        if vlink.name=='ground':
+            continue
+        for i, p in enumerate(vlink.points):
+            if i==0:
+                continue
+            edges.append((vlink.points[0], p))
+            if i>1:
+                edges.append((vlink.points[i-1], p))
+    return tuple(edges)
