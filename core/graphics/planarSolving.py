@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,7 @@ from math import (
     cos,
     sin
 )
-from ..libs.python_solvespace.slvs import (
+from core.libs import (
     #System base
     System, groupNum, Slvs_MakeQuaternion,
     #Entities & Constraint

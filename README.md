@@ -1,4 +1,4 @@
-[![Version](https://img.shields.io/badge/version-0.9.0-yellow.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
+[![Version](https://img.shields.io/badge/version-18.1.0-yellow.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
 [![Build Status](https://travis-ci.org/KmolYuan/Pyslvs-PyQt5.svg)](https://travis-ci.org/KmolYuan/Pyslvs-PyQt5)
 [![PYTHON](https://img.shields.io/badge/python-3.5%20--%203.6-blue.svg)](https://www.python.org/)
 [![QT](https://img.shields.io/badge/pyqt-5.7%20--%205.9-orange.svg)](https://riverbankcomputing.com/software/pyqt/intro)
@@ -6,13 +6,16 @@
 [![Downloads](https://img.shields.io/github/downloads/KmolYuan/Pyslvs-PyQt5/total.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
 [![GitHub license](https://img.shields.io/badge/license-AGPLv3-blue.svg)](https://raw.githubusercontent.com/KmolYuan/Pyslvs-PyQt5/master/LICENSE)
 
-[![title](icons/title.png)](http://www.pyslvs.com/blog/index.html "Click here go to our website.")
+![title](icons/title.png)
+
+Website: <http://www.pyslvs.com/blog/index.html>
 
 1. [Introduction](#introduction)
 
     + [How to startup](#how-to-startup)
     + [Symbolic](#symbolic)
     + [Number and Type Synthesis](#number-and-type-synthesis)
+    + [Triangular iteration](#triangular-iteration)
     + [Dimensional Synthesis](#dimensional-synthesis)
 
 1. [Modules Requirement](#modules-requirement)
@@ -79,6 +82,22 @@ Referring symbolic from [PMKS](http://designengrlab.github.io/PMKS/).
 
     ![Link](images/Link.png)
 
+The PMKS expression is using a name label to present a link bar.
+
+A joint between two links will get two name labels, and so on.
+
+The "ground" label is a default name, this link will be the absolute coordinate in the system, might be a frame of your mechanism.
+
+![PMKS example](images/PMKS_example.png)
+
+Pyslvs was translate the PMKS expression as a string, like below:
+
+```
+M[J[R, color[Green], P[0.0, 0.0], L[ground, link_0]], J[R, color[Green], P[12.92, 32.53], L[link_0, link_1]], J[R, color[Green], P[73.28, 67.97], L[link_1, link_2]], J[R, color[Green], P[33.3, 66.95], L[link_1]], J[R, color[Green], P[90.0, 0.0], L[ground, link_2]]]
+```
+
+Then the expression can be parse in Pyslvs to create the mechanism.
+
 ## Number and Type Synthesis
 
 Analysis a type of mechanism that exists, and find out other possibilities.
@@ -95,9 +114,25 @@ And use a type of mechanism to do grounding combine.
 
 ![](images/Grounding.png)
 
+Grounding combine can merge the structure diagram immediately to canvas.
+
+But in the common ways, you can give it to dimensional synthesis to make it more useful.
+
+## Triangular iteration
+
+Before doing dimensional synthesis, a structure diagram has to configure it's verification formula.
+
+![](images/Triangular_Iteration.png)
+
+**PLAP** function is using two known points, a length variable and an angle variable to find out the position of third point.
+
+**PLLP** function is using two known points and two length variables to find out the position of third point.
+
+When the structure profile is complete, is time to doing dimensional synthesis!
+
 ## Dimensional Synthesis
 
-Generate a mechanism with path requirement by random dimension.
+Generate a mechanism with path requirement by random variables.
 
 ![](images/Dimensional_Synthesis.png)
 

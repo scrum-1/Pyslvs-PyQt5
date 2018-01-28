@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 
 from math import sqrt, degrees, atan2
 from networkx import Graph
-from ..graphics.color import colorQt
+from core.graphics import colorQt
 from typing import Tuple
 
 class VPoint:

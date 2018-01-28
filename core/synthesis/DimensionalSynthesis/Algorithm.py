@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,54 +17,40 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ...QtModules import *
+from core.QtModules import *
 from .Ui_Algorithm import Ui_Form as PathSolving_Form
-from ...io.larkParser import get_from_parenthesis
-from ...libs.pyslvs_algorithm.TS import solver, Direction
-from .Algorithm_options import (
+from core.io import get_from_parenthesis
+from core.libs.pyslvs_algorithm.TS import solver, Direction
+from core.synthesis import mechanismParams_4Bar, mechanismParams_8Bar
+from .options import (
     GeneticPrams,
     FireflyPrams,
     defaultSettings,
     DifferentialPrams,
-    Algorithm_options_show
+    Options_show
 )
-from .Algorithm_path_adjust import Algorithm_path_adjust_show
-from .Algorithm_progress import Algorithm_progress_show
-from .Algorithm_series import Algorithm_series_show
-from .Algorithm_preview import PreviewDialog
-from .Algorithm_chart import ChartDialog
+from .path_adjust import Path_adjust_show
+from .progress import Progress_show
+from .series import Series_show
+from .preview import PreviewDialog
+from .chart import ChartDialog
 import csv
 import openpyxl
 from re import split as charSplit
 
-mechanismParams_4Bar = {
-    'Driving':{'A':None}, #'A':(x, y, r)
-    'Follower':{'B':None}, #'B':(x, y, r)
-    'Target':'E',
-    'Expression':"PLAP[A,L0,a0,B](C);PLLP[C,L1,L2,B](D);PLLP[C,L3,L4,D](E)",
-    'constraint':[('A', 'B', 'C', 'D')]
-}
-mechanismParams_8Bar = {
-    'Driving':{'A':None},
-    'Follower':{'B':None},
-    'Target':'H',
-    'Expression':"PLAP[A,L0,a0,B](C);PLLP[B,L2,L1,C](D);PLLP[B,L4,L3,D](E);PLLP[C,L5,L6,B](F);PLLP[F,L8,L7,E](G);PLLP[F,L9,L10,G](H)",
-    'constraint':[('A', 'B', 'C', 'D')]
-}
-
-class Algorithm_show(QWidget, PathSolving_Form):
-    fixPointRange = pyqtSignal(tuple, float, tuple, float)
+class DimensionalSynthesis(QWidget, PathSolving_Form):
+    fixPointRange = pyqtSignal(dict)
     pathChanged = pyqtSignal(tuple)
     mergeResult = pyqtSignal(int, tuple)
     
     def __init__(self, parent):
-        super(Algorithm_show, self).__init__(parent)
+        super(DimensionalSynthesis, self).__init__(parent)
         self.setupUi(self)
         self.path = parent.FileWidget.Designs.path
         self.mechanism_data = parent.FileWidget.Designs.result
         self.mechanism_data_add = parent.FileWidget.Designs.addResult
         self.mechanism_data_del = parent.FileWidget.Designs.delResult
-        self.env = lambda: parent.env
+        self.inputFrom = parent.inputFrom
         self.unsaveFunc = parent.workbookNoSave
         self.Settings = defaultSettings.copy()
         self.algorithmPrams_default()
@@ -76,13 +62,14 @@ class Algorithm_show(QWidget, PathSolving_Form):
         self.Ar.valueChanged.connect(self.updateRange)
         self.Ax.valueChanged.connect(self.updateRange)
         self.Ay.valueChanged.connect(self.updateRange)
-        self.Dr.valueChanged.connect(self.updateRange)
-        self.Dx.valueChanged.connect(self.updateRange)
-        self.Dy.valueChanged.connect(self.updateRange)
+        self.Br.valueChanged.connect(self.updateRange)
+        self.Bx.valueChanged.connect(self.updateRange)
+        self.By.valueChanged.connect(self.updateRange)
         self.type0.clicked.connect(self.algorithmPrams_default)
         self.type1.clicked.connect(self.algorithmPrams_default)
         self.type2.clicked.connect(self.algorithmPrams_default)
         self.Result_list.clicked.connect(self.hasResult)
+        self.clear()
         self.isGenerate()
         self.hasResult()
     
@@ -92,13 +79,13 @@ class Algorithm_show(QWidget, PathSolving_Form):
     
     @pyqtSlot()
     def on_clearAll_clicked(self):
-        for i in range(self.Point_list.count()):
+        for i in range(len(self.path)):
             self.on_remove_clicked(0)
         self.isGenerate()
     
     @pyqtSlot()
     def on_series_clicked(self):
-        dlg = Algorithm_series_show(self)
+        dlg = Series_show(self)
         dlg.show()
         if dlg.exec_():
             for e in dlg.path:
@@ -113,7 +100,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
     
     @pyqtSlot()
     def on_importCSV_clicked(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open file...", self.env(), "Text File (*.txt);;CSV File (*.csv)")
+        fileName = self.inputFrom("Path data", ["Text File (*.txt)", "CSV File (*.csv)"])
         if fileName:
             data = []
             with open(fileName, newline=str()) as stream:
@@ -128,14 +115,11 @@ class Algorithm_show(QWidget, PathSolving_Form):
             for e in data:
                 self.on_add_clicked(e[0], e[1])
         except:
-            QMessageBox.warning(self, "File error",
-                "Wrong format.\nIt should be look like this:"+"\n0.0,0.0[\\n]"*3,
-                QMessageBox.Ok, QMessageBox.Ok
-            )
+            QMessageBox.warning(self, "File error", "Wrong format.\nIt should be look like this:"+"\n0.0,0.0[\\n]"*3)
     
     @pyqtSlot()
     def on_importXLSX_clicked(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open file...", self.env(), "Microsoft Office Excel (*.xlsx *.xlsm *.xltx *.xltm)")
+        fileName = self.inputFrom("Excel file", ["Microsoft Office Excel (*.xlsx *.xlsm *.xltx *.xltm)"])
         if fileName:
             wb = openpyxl.load_workbook(fileName)
             ws = wb.get_sheet_by_name(wb.get_sheet_names()[0])
@@ -150,10 +134,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
                 try:
                     data.append((round(float(x), 4), round(float(y), 4)))
                 except:
-                    QMessageBox.warning(self, "File error",
-                        "Wrong format.\nThe datasheet seems to including non-digital cell.",
-                        QMessageBox.Ok, QMessageBox.Ok
-                    )
+                    QMessageBox.warning(self, "File error", "Wrong format.\nThe datasheet seems to including non-digital cell.")
                     break
                 i += 1
             for e in data:
@@ -161,7 +142,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
     
     @pyqtSlot()
     def on_pathAdjust_clicked(self):
-        dlg = Algorithm_path_adjust_show(self.path)
+        dlg = Path_adjust_show(self.path)
         dlg.show()
         if dlg.exec_():
             self.on_clearAll_clicked()
@@ -242,7 +223,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def startAlgorithm(self, hasPort=False):
         type_num, mechanismParams, setting = self.getGenerate()
         setting.update(self.Settings['algorithmPrams'])
-        dlg = Algorithm_progress_show(type_num, mechanismParams, setting, self.portText.text() if hasPort else None, self)
+        dlg = Progress_show(type_num, mechanismParams, setting, self.portText.text() if hasPort else None, self)
         dlg.show()
         if dlg.exec_():
             self.mechanism_data_add(dlg.mechanisms)
@@ -256,9 +237,9 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def getGenerate(self):
         type_num = 0 if self.type0.isChecked() else 1 if self.type1.isChecked() else 2
         mechanismParams = (mechanismParams_4Bar if self.FourBar.isChecked() else mechanismParams_8Bar).copy()
-        mechanismParams['targetPath'] = tuple(self.path)
-        mechanismParams['Driving']['A'] = (self.Ax.value(), self.Ay.value(), self.Ar.value())
-        mechanismParams['Follower']['B'] = (self.Dx.value(), self.Dy.value(), self.Dr.value())
+        mechanismParams['Target'][get_from_parenthesis(mechanismParams['Expression'].split(';')[-1], '(', ')')] = tuple(self.path)
+        mechanismParams['Driver']['A'] = (self.Ax.value(), self.Ay.value(), self.Ar.value())
+        mechanismParams['Follower']['B'] = (self.Bx.value(), self.By.value(), self.Br.value())
         mechanismParams['IMax'] = self.Settings['IMax']
         mechanismParams['IMin'] = self.Settings['IMin']
         mechanismParams['LMax'] = self.Settings['LMax']
@@ -276,7 +257,11 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def setTime(self, time_spand):
         sec = round(time_spand%60, 2)
         mins = int(time_spand/60)
-        self.timeShow.setText("<html><head/><body><p><span style=\"font-size:12pt\">{}[min] {}[s]</span></p></body></html>".format(mins, sec))
+        self.timeShow.setText(
+            "<html><head/><body><p><span style=\"font-size:12pt\">"+
+            "{}[min] {:.02f}[s]".format(mins, sec)+
+            "</span></p></body></html>"
+        )
     
     #Add result items, except add to the list.
     def addResult(self, result):
@@ -302,10 +287,13 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def on_deleteButton_clicked(self):
         row = self.Result_list.currentRow()
         if row>-1:
-            self.mechanism_data_del(row)
-            self.Result_list.takeItem(row)
-            self.unsaveFunc()
-            self.hasResult()
+            reply = QMessageBox.question(self, "Delete", "Delete this result from list?",
+                (QMessageBox.Apply | QMessageBox.Cancel), QMessageBox.Apply)
+            if reply==QMessageBox.Apply:
+                self.mechanism_data_del(row)
+                self.Result_list.takeItem(row)
+                self.unsaveFunc()
+                self.hasResult()
     
     def hasResult(self, p0=None):
         for button in [self.mergeButton, self.deleteButton]:
@@ -325,16 +313,13 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def on_mergeButton_clicked(self):
         row = self.Result_list.currentRow()
         if row>-1:
-            reply = QMessageBox.question(self, "Message", "Merge this result to your canvas?",
+            reply = QMessageBox.question(self, "Merge", "Merge this result to your canvas?",
                 (QMessageBox.Apply | QMessageBox.Cancel), QMessageBox.Apply)
             if reply==QMessageBox.Apply:
                 self.mergeResult.emit(row, self.legal_crank(row))
     
     def legal_crank(self, row):
         Result = self.mechanism_data[row]
-        path = Result['targetPath']
-        pointAvg = sum([e[1] for e in path])/len(path)
-        other = (Result['A'][1]+Result['B'][1])/2>pointAvg and Result['A'][0]<Result['B'][0]
         expression = Result['Expression'].split(';')
         expression_tag = tuple(
             tuple(get_from_parenthesis(exp, '[', ']').split(',') + [get_from_parenthesis(exp, '(', ')')])
@@ -347,16 +332,16 @@ class Algorithm_show(QWidget, PathSolving_Form):
         '''
         Paths = tuple([] for tag in exp_symbol)
         for a in range(360+1):
-            Directions = [Direction(p1=Result['A'], p2=Result['B'], len1=Result['L0'], angle=a, other=other)]
+            Directions = [Direction(p1=Result['A'], p2=Result['B'], len1=Result['L0'], angle=a)]
             for exp in expression_tag[1:]:
                 p1 = Result['A'] if exp[0]=='A' else expression_result.index(exp[0]) if exp[0] in expression_result else Result['B']
                 p2 = Result['A'] if exp[3]=='A' else expression_result.index(exp[3]) if exp[3] in expression_result else Result['B']
-                Directions.append(Direction(p1=p1, p2=p2, len1=Result[exp[1]], len2=Result[exp[2]], other=other))
+                Directions.append(Direction(p1=p1, p2=p2, len1=Result[exp[1]], len2=Result[exp[2]]))
             s = solver(Directions)
             s_answer = s.answer()
             for i, a in enumerate(s_answer):
                 Paths[exp_symbol.index(expression_result[i])].append(a)
-        return tuple(tuple(path) if (path==False or len(set(path))>1 or (False in path)) else () for path in Paths)
+        return tuple(tuple(path) if len(set(path))>1 else () for path in Paths)
     
     @pyqtSlot()
     def on_Result_chart_clicked(self):
@@ -367,7 +352,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
     def on_Result_load_settings_clicked(self):
         self.hasResult()
         row = self.Result_list.currentRow()
-        if row>-1 and row!=len(self.mechanism_data):
+        if row>-1:
             Result = self.mechanism_data[row]
             if Result['Algorithm']=='RGA':
                 self.type0.setChecked(True)
@@ -375,35 +360,33 @@ class Algorithm_show(QWidget, PathSolving_Form):
                 self.type1.setChecked(True)
             elif Result['Algorithm']=='DE':
                 self.type2.setChecked(True)
-            if Result['Expression']=="PLAP[A,L0,a0,D](B);PLLP[B,L1,L2,D](C);PLLP[B,L3,L4,C](E)":
+            if Result['Expression']=="PLAP[A,L0,a0,B](C);PLLP[C,L1,L2,B](D);PLLP[C,L3,L4,D](E)":
                 self.FourBar.setChecked(True)
             else:
                 self.EightBar.setChecked(True)
             self.setTime(Result['time'])
+            self.Ax.setValue(Result['Driver']['A'][0])
+            self.Ay.setValue(Result['Driver']['A'][1])
+            self.Ar.setValue(Result['Driver']['A'][2])
+            self.Bx.setValue(Result['Follower']['B'][0])
+            self.By.setValue(Result['Follower']['B'][1])
+            self.Br.setValue(Result['Follower']['B'][2])
             settings = Result['settings']
-            self.Ax.setValue((settings['upper'][0]+settings['lower'][0])/2)
-            self.Ay.setValue((settings['upper'][1]+settings['lower'][1])/2)
-            self.Ar.setValue(abs(settings['upper'][0]-self.Ax.value())*2)
-            self.Dx.setValue((settings['upper'][2]+settings['lower'][2])/2)
-            self.Dy.setValue((settings['upper'][3]+settings['lower'][3])/2)
-            self.Dr.setValue(abs(settings['upper'][2]-self.Dx.value())*2)
             self.Settings = {
                 'maxGen':settings['maxGen'],
                 'report':0 if settings['report']==0 else settings['maxGen']/settings['report']/100,
-                'IMax':settings['upper'][4], 'IMin':settings['lower'][4],
-                'LMax':settings['upper'][5], 'LMin':settings['lower'][5],
-                'FMax':settings['upper'][6], 'FMin':settings['lower'][6],
-                'AMax':settings['upper'][-1], 'AMin':settings['lower'][-1]
+                'IMax':Result['IMax'], 'IMin':Result['IMin'],
+                'LMax':Result['LMax'], 'LMin':Result['LMin'],
+                'FMax':Result['FMax'], 'FMin':Result['FMin'],
+                'AMax':Result['AMax'], 'AMin':Result['AMin']
             }
             algorithmPrams = settings.copy()
-            del algorithmPrams['nParm']
-            del algorithmPrams['upper']
-            del algorithmPrams['lower']
             del algorithmPrams['report']
             self.Settings['algorithmPrams'] = algorithmPrams
             self.on_clearAll_clicked()
-            for e in Result['targetPath']:
-                self.on_add_clicked(e[0], e[1])
+            for point in Result['Target'].values():
+                for x, y in point:
+                    self.on_add_clicked(x, y)
     
     def algorithmPrams_default(self):
         type_num = 0 if self.type0.isChecked() else 1 if self.type1.isChecked() else 2
@@ -417,7 +400,7 @@ class Algorithm_show(QWidget, PathSolving_Form):
     @pyqtSlot()
     def on_advanceButton_clicked(self):
         type_num = "Genetic Algorithm" if self.type0.isChecked() else "Firefly Algorithm" if self.type1.isChecked() else "Differential Evolution"
-        dlg = Algorithm_options_show(type_num, self.Settings)
+        dlg = Options_show(type_num, self.Settings)
         dlg.show()
         if dlg.exec_():
             tablePL = lambda row: dlg.PLTable.cellWidget(row, 1).value()
@@ -437,17 +420,20 @@ class Algorithm_show(QWidget, PathSolving_Form):
     
     @pyqtSlot(float)
     def updateRange(self, p0=None):
-        self.fixPointRange.emit((self.Ax.value(), self.Ay.value()), self.Ar.value(), (self.Dx.value(), self.Dy.value()), self.Dr.value())
+        self.fixPointRange.emit({
+            'A':(self.Ax.value(), self.Ay.value(), self.Ar.value()),
+            'B':(self.Bx.value(), self.By.value(), self.Br.value())
+        })
     
     def clear(self):
-        self.Point_list.clear()
+        self.on_clearAll_clicked()
         self.Result_list.clear()
         self.Settings = defaultSettings.copy()
         self.X_coordinate.setValue(0)
         self.Y_coordinate.setValue(0)
         self.Ax.setValue(0)
         self.Ay.setValue(0)
-        self.Ar.setValue(100)
-        self.Dx.setValue(0)
-        self.Dy.setValue(0)
-        self.Dr.setValue(100)
+        self.Ar.setValue(10)
+        self.Bx.setValue(50)
+        self.By.setValue(0)
+        self.Br.setValue(10)

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
+    <width>507</width>
     <height>636</height>
    </rect>
   </property>
@@ -362,7 +362,7 @@
             <item>
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Driver: </string>
+               <string>Driver (A): </string>
               </property>
              </widget>
             </item>
@@ -423,9 +423,6 @@
               <property name="singleStep">
                <double>10.000000000000000</double>
               </property>
-              <property name="value">
-               <double>100.000000000000000</double>
-              </property>
              </widget>
             </item>
            </layout>
@@ -446,7 +443,7 @@
             <item>
              <widget class="QLabel" name="label_3">
               <property name="text">
-               <string>Follower: </string>
+               <string>Follower (B): </string>
               </property>
              </widget>
             </item>
@@ -457,7 +454,7 @@
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_5">
               <item>
-               <widget class="QDoubleSpinBox" name="Dx">
+               <widget class="QDoubleSpinBox" name="Bx">
                 <property name="maximumSize">
                  <size>
                   <width>70</width>
@@ -476,7 +473,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QDoubleSpinBox" name="Dy">
+               <widget class="QDoubleSpinBox" name="By">
                 <property name="maximumSize">
                  <size>
                   <width>70</width>
@@ -497,7 +494,7 @@
              </layout>
             </item>
             <item>
-             <widget class="QDoubleSpinBox" name="Dr">
+             <widget class="QDoubleSpinBox" name="Br">
               <property name="prefix">
                <string>±</string>
               </property>
@@ -506,9 +503,6 @@
               </property>
               <property name="singleStep">
                <double>10.000000000000000</double>
-              </property>
-              <property name="value">
-               <double>100.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -564,7 +558,11 @@
             <item>
              <widget class="QPushButton" name="Result_load_settings">
               <property name="text">
-               <string>Load settings</string>
+               <string>Load</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../../icons.qrc">
+                <normaloff>:/icons/dataupdate.png</normaloff>:/icons/dataupdate.png</iconset>
               </property>
              </widget>
             </item>
@@ -592,6 +590,10 @@
               <property name="text">
                <string>Delete</string>
               </property>
+              <property name="icon">
+               <iconset resource="../../../icons.qrc">
+                <normaloff>:/icons/delete.png</normaloff>:/icons/delete.png</iconset>
+              </property>
              </widget>
             </item>
             <item>
@@ -604,6 +606,10 @@
               </property>
               <property name="text">
                <string>Merge</string>
+              </property>
+              <property name="icon">
+               <iconset resource="../../../icons.qrc">
+                <normaloff>:/icons/merge.png</normaloff>:/icons/merge.png</iconset>
               </property>
              </widget>
             </item>
@@ -648,7 +654,7 @@
              <item>
               <widget class="QRadioButton" name="FourBar">
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1&gt;Four Bar&lt;/h1&gt;&lt;img src=&quot;:/icons/preview/4Bar_triangle.png&quot;/&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1&gt;Four Bar&lt;/h1&gt;&lt;p&gt;&lt;img src=&quot;:/icons/preview/4Bar_triangle.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Four Bar (?)</string>
@@ -661,7 +667,7 @@
              <item>
               <widget class="QRadioButton" name="EightBar">
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1&gt;Eight Bar&lt;/h1&gt;&lt;img src=&quot;:/icons/preview/8Bar_triangle.png&quot;/&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h1&gt;Eight Bar&lt;/h1&gt;&lt;p&gt;&lt;img src=&quot;:/icons/preview/8Bar_triangle.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Eight Bar (?)</string>
@@ -844,7 +850,7 @@
            <string>Calculated by the zmq servers.</string>
           </property>
           <property name="text">
-           <string>ZMQ Generate</string>
+           <string>Synthesis</string>
           </property>
           <property name="icon">
            <iconset resource="../../../icons.qrc">
@@ -870,7 +876,7 @@
            <string>Calculated on the local side.</string>
           </property>
           <property name="text">
-           <string>Local Generate</string>
+           <string>Synthesis</string>
           </property>
           <property name="icon">
            <iconset resource="../../../icons.qrc">

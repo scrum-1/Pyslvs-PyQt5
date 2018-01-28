@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -18,10 +18,11 @@
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 from lark import Lark, Transformer
-from ..graphics.color import colorName
+from core.graphics import colorName
 
-#Parenthesis
+#Get from parenthesis
 get_from_parenthesis = lambda s, front, back: s[s.find(front)+1:s.find(back)]
+get_front_of_parenthesis = lambda s, front: s[:s.find(front)]
 
 #Common grammar
 common_NUMBER = '''

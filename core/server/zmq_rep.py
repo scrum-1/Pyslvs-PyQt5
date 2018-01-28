@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,7 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ..libs.pyslvs_algorithm import tinycadlib
-from ..libs.pyslvs_algorithm.planarlinkage import build_planar
+from core.libs import build_planar
 import os, zmq
 
 def startRep(PORT):
@@ -32,7 +31,7 @@ def startRep(PORT):
         try:
             data = socket.recv().decode("utf-8").split(';')
             mechanismParams = {
-                'Driving':data[0],
+                'Driver':data[0],
                 'Follower':data[1],
                 'Link':data[2],
                 'Target':data[3],

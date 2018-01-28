@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,9 +17,9 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ..QtModules import *
-from ..graphics.color import colorIcons
-from ..io.elements import VPoint, VLink
+from core.QtModules import *
+from core.graphics import colorIcons
+from core.io import VPoint, VLink
 from typing import TypeVar, Tuple
 VPointType = TypeVar('VPointType', int, str)
 
@@ -39,14 +39,14 @@ class BaseTableWidget(QTableWidget):
             self.setHorizontalHeaderItem(i, QTableWidgetItem(e))
     
     #Get the whole row of texts.
-    def rowTexts(self, row):
+    def rowTexts(self, row, noName=False):
         texts = []
-        for column in range(self.columnCount()):
+        for column in self.EffectiveRange(noName):
             item = self.item(row, column)
-            if item is not None:
-                texts.append(item.text())
-            else:
+            if item is None:
                 texts.append('')
+            else:
+                texts.append(item.text())
         return tuple(texts)
     
     #Get what row is been selected.
@@ -152,7 +152,7 @@ class PointTableWidget(BaseTableWidget):
             self.setItem(i, 6, item)
     
     #Let all points go back to the origin coordinate.
-    def getBackOrigin(self):
+    def getBackPosition(self):
         self.updateCurrentPosition(tuple(
             (float(self.item(row, 4).text()), float(self.item(row, 5).text()))
             for row in range(self.rowCount())
@@ -196,6 +196,12 @@ class PointTableWidget(BaseTableWidget):
                 isSelected if UnSelect else True)
             self.scrollToItem(self.item(row, 0))
     
+    def EffectiveRange(self, noName):
+        if noName:
+            return range(1, self.columnCount()-1)
+        else:
+            return range(self.columnCount())
+    
     #Overwrite "clearSelection" slot, so it will emit "rowSelectionChanged" signal.
     @pyqtSlot()
     def clearSelection(self):
@@ -235,12 +241,15 @@ class LinkTableWidget(BaseTableWidget):
         color: str,
         points: str
     ):
-        for i, e in enumerate([name, color, points]):
+        for i, e in enumerate((name, color, points)):
             item = QTableWidgetItem(e)
             item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             if i==1:
                 item.setIcon(colorIcons(e))
             self.setItem(row, i, item)
+    
+    def EffectiveRange(self, noName):
+        return range(self.columnCount())
     
     def clear(self):
         super(LinkTableWidget, self).clear()

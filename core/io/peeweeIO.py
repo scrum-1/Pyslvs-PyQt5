@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ..QtModules import *
+from core.QtModules import *
 from .Ui_peeweeIO import Ui_Form
 from .example import example_list
 from typing import List, Dict
@@ -41,25 +41,18 @@ from peewee import (
 db = SqliteDatabase(None)
 
 class Designs:
-    __slots__ = ('path', '__result')
+    __slots__ = ('path', 'result')
     
     def __init__(self):
         self.path = []
-        self.__result = []
+        self.result = []
     
     def addResult(self, new_result: List[Dict]):
-        self.result += new_result
+        for result in new_result:
+            self.result.append(result.copy())
     
     def delResult(self, index: int):
         self.result.pop(index)
-    
-    @property
-    def result(self):
-        return self.__result
-    
-    @result.setter
-    def result(self, r):
-        self.__result = r
 
 #Show who commited the workbook.
 class UserModel(Model):
@@ -92,6 +85,8 @@ class CommitModel(Model):
     pathdata = BlobField()
     #Collection data
     collectiondata = BlobField()
+    #Triangle collection data
+    triangledata = BlobField()
     #Algorithm data
     algorithmdata = BlobField()
     class Meta:
@@ -142,9 +137,11 @@ class FileWidget(QWidget, Ui_Form):
         '''
         Mentioned in "core.widgets.custom", because DimensionalSynthesis created after FileWidget.
         
-        self.CollectDataFunc = lambda: [list(G.edges) for G in parent.NumberAndTypeSynthesis.collections] #Call to get collections data
-        self.loadCollectFunc = parent.NumberAndTypeSynthesis.addCollections #Call to load collections data.
-        self.loadAlgorithmFunc = parent.DimensionalSynthesis.loadResults #Call after loaded algorithm results.
+        self.CollectDataFunc #Call to get collections data.
+        self.TriangleDataFunc #Call to get triangle data.
+        self.loadCollectFunc #Call to load collections data.
+        self.loadTriangleFunc #Call to load triangle data.
+        self.loadAlgorithmFunc #Call after loaded algorithm results.
         '''
         #Close database when destroyed.
         self.destroyed.connect(self.colseDatabase)
@@ -225,6 +222,7 @@ class FileWidget(QWidget, Ui_Form):
                 'storage':compress(self.storageDataFunc()),
                 'pathdata':compress(self.pathData),
                 'collectiondata':compress(self.CollectDataFunc()),
+                'triangledata':compress(self.TriangleDataFunc()),
                 'algorithmdata':compress(self.Designs.result),
                 'branch':branch_model
             }
@@ -348,8 +346,10 @@ class FileWidget(QWidget, Ui_Form):
             self.loadPathFunc(decompress(commit.pathdata))
             #Load collectiondata.
             self.loadCollectFunc(decompress(commit.collectiondata))
+            #Load triangledata.
+            self.loadTriangleFunc(decompress(commit.triangledata))
             #Load algorithmdata.
-            self.Designs.result = decompress(commit.algorithmdata)
+            self.Designs.addResult(decompress(commit.algorithmdata))
             self.loadAlgorithmFunc()
             #Workbook loaded.
             self.isSavedFunc()

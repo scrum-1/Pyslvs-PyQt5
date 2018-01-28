@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,7 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ..QtModules import *
+from core.QtModules import *
 from .info import VERSION, INFO, args
 from .Ui_about import Ui_About_Dialog
 
@@ -38,7 +38,7 @@ class Pyslvs_About(QDialog, Ui_About_Dialog):
         super(Pyslvs_About, self).__init__(parent)
         self.setupUi(self)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
-        self.Title.setText(html(title("Pyslvs")+content("Version {}.{}.{}({}) 2016-2017".format(*VERSION))))
+        self.Title.setText(html(title("Pyslvs")+content("Version {}.{}.{}({}) 2016-2018".format(*VERSION))))
         self.Content.setText(html(content(
             "Pyslvs is a Open Source support tools to help user solving 2D linkage problem.",
             "It can use in Mechanical Design and Simulation.",

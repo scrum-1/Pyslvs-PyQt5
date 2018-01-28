@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2017 Yuan Chang
+##Copyright (C) 2016-2018 Yuan Chang
 ##E-mail: pyslvs@gmail.com
 ##
 ##This program is free software; you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 ##along with this program; if not, write to the Free Software
 ##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from ..QtModules import *
-from ..graphics.color import colorName, colorIcons
+from core.QtModules import *
+from core.graphics import colorName, colorIcons
 from .Ui_edit_point import Ui_Dialog as edit_point_Dialog
 
 class edit_point_show(QDialog, edit_point_Dialog):
