@@ -1,9 +1,9 @@
+requests
 pyqt5
 pyqtchart
 dxfwrite
 numpy
 cython
-pyzmq
 openpyxl
 psutil
 peewee

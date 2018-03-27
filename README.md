@@ -1,7 +1,7 @@
-[![Version](https://img.shields.io/badge/version-18.1.0-yellow.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
+[![Version](https://img.shields.io/badge/version-18.4.0-yellow.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
 [![Build Status](https://travis-ci.org/KmolYuan/Pyslvs-PyQt5.svg)](https://travis-ci.org/KmolYuan/Pyslvs-PyQt5)
 [![PYTHON](https://img.shields.io/badge/python-3.5%20--%203.6-blue.svg)](https://www.python.org/)
-[![QT](https://img.shields.io/badge/pyqt-5.7%20--%205.9-orange.svg)](https://riverbankcomputing.com/software/pyqt/intro)
+[![PYQT](https://img.shields.io/badge/pyqt-5.7%20--%205.10-orange.svg)](https://riverbankcomputing.com/software/pyqt/intro)
 [![OS](https://img.shields.io/badge/os-Ubuntu%2C%20Windows-blue.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
 [![Downloads](https://img.shields.io/github/downloads/KmolYuan/Pyslvs-PyQt5/total.svg)](https://github.com/KmolYuan/Pyslvs-PyQt5/releases)
 [![GitHub license](https://img.shields.io/badge/license-AGPLv3-blue.svg)](https://raw.githubusercontent.com/KmolYuan/Pyslvs-PyQt5/master/LICENSE)
@@ -14,6 +14,7 @@ Website: <http://www.pyslvs.com/blog/index.html>
 
     + [How to startup](#how-to-startup)
     + [Symbolic](#symbolic)
+    + [Kinematics Simulation](#kinematics-simulation)
     + [Number and Type Synthesis](#number-and-type-synthesis)
     + [Triangular iteration](#triangular-iteration)
     + [Dimensional Synthesis](#dimensional-synthesis)
@@ -34,17 +35,20 @@ Website: <http://www.pyslvs.com/blog/index.html>
 
 # Introduction
 
-A GUI-based tool solving 2D linkage subject.
+A GUI-based tool use to solving 2D linkage subject.
 
 + **Planar Linkages Simulation**: Kernel from [Solvespace] with Python bundle (SWIG).
 
-+ **Dimensional Synthesis**: Kernel from three Cython algorithm API (rewrite).
++ **Mechanical Synthesis**:
+
+    - **Number and Type Synthesis**: Cython algorithm use to find out structure possibilities of the mechanism.
+    - **Dimensional Synthesis**: Kernel from three Cython algorithm API (rewrite).
 
 Compatible with Python 3.5, PyQt 5.7 (for PyQtChart) and above.
 
 Cross-platform Development: Ubuntu and Windows (64-bit).
 
-You should install Graphviz first. See [here](#graphviz).
+You can install Graphviz optionally. See [here](#graphviz).
 
 **Please note that the other platforms may be available but I have not tested before.**
 
@@ -98,6 +102,25 @@ M[J[R, color[Green], P[0.0, 0.0], L[ground, link_0]], J[R, color[Green], P[12.92
 
 Then the expression can be parse in Pyslvs to create the mechanism.
 
+## Kinematics Simulation
+
+Pyslvs has a simple simulation function for revolute joints.
+
+![PMKS example](images/Kinemetic.png)
+
+Choose a base link and a drive link for the joint, then add the dependent into variables list.
+
+Using QDial widget (it just like a turntable) to adjust the angle value of variable.
+
+Path data will start append coordinates (between a certain of distance) after press the "record" button. Press "record" button again to stop recording.
+
+Path data can be copy or switch visibility by right-click menu.
+
+Some exceptions are not support:
+
++ Other type of joints.
++ Degree of freedom was lower than 1 but still can moving.
+
 ## Number and Type Synthesis
 
 Analysis a type of mechanism that exists, and find out other possibilities.
@@ -134,6 +157,9 @@ When the structure profile is complete, is time to doing dimensional synthesis!
 
 Generate a mechanism with path requirement by random variables.
 
++ The structure settings is get from triangular iteration.
++ There also have algorithm options, such like constrains or probability.
+
 ![](images/Dimensional_Synthesis.png)
 
 Contains three algorithms:
@@ -144,7 +170,11 @@ Contains three algorithms:
 
 Specify a path and options to generate a crank rocker.
 
-This function has a simple TCP ZMQ connecting mode.
+Three kinds of task target:
+
++ Stop at the maximum generation.
++ Get the minimum fitness value.
++ Stop at the maximum time.
 
 # Modules Requirement
 

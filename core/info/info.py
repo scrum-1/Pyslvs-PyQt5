@@ -1,34 +1,31 @@
 # -*- coding: utf-8 -*-
-##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2018 Yuan Chang
-##E-mail: pyslvs@gmail.com
-##
-##This program is free software; you can redistribute it and/or modify
-##it under the terms of the GNU Affero General Public License as published by
-##the Free Software Foundation; either version 3 of the License, or
-##(at your option) any later version.
-##
-##This program is distributed in the hope that it will be useful,
-##but WITHOUT ANY WARRANTY; without even the implied warranty of
-##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##GNU Affero General Public License for more details.
-##
-##You should have received a copy of the GNU Affero General Public License
-##along with this program; if not, write to the Free Software
-##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+"""Informations.
+
++ Pyslvs version.
++ Module versions.
++ Help descriptions.
++ Check for update function.
+"""
+
+__author__ = "Yuan Chang"
+__copyright__ = "Copyright (C) 2016-2018"
+__license__ = "AGPL"
+__email__ = "pyslvs@gmail.com"
 
 from sys import version_info
 import platform
 import argparse
-try:
-    from PyQt5.QtCore import qVersion, PYQT_VERSION_STR
-    Qt_Version = qVersion().strip()
-    PyQt_Version = PYQT_VERSION_STR.strip()
-except ImportError:
-    Qt_Version = "No Qt"
-    PyQt_Version = "No PyQt"
+import requests
+from core.QtModules import (
+    QProgressDialog,
+    qVersion,
+    PYQT_VERSION_STR
+)
+Qt_Version = qVersion().strip()
+PyQt_Version = PYQT_VERSION_STR.strip()
 
-VERSION = (18, 1, 0, 'release')
+VERSION = (18, 4, 0, 'dev')
 
 INFO = (
     "Pyslvs {}.{}.{}({})".format(*VERSION),
@@ -53,9 +50,10 @@ POWERBY = (
     "Pydot"
 )
 
-#--help
+"""--help arguments"""
+
 parser = argparse.ArgumentParser(
-    description="Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.",
+    description="Pyslvs - Open Source Planar Linkage Mechanism Simulation and Mechanical Synthesis System. ",
     epilog="Power by {}.".format(", ".join(POWERBY))
 )
 parser.add_argument('-v', '--version', action='version', help="show version infomations and exit", version=INFO[0])
@@ -66,5 +64,23 @@ parser.add_argument('-f', '--fusion', action='store_true', help="run Pyslvs in F
 parser.add_argument('--full-screen', action='store_true', help="start Pyslvs with full-screen mode")
 parser.add_argument('--server', metavar='PORT', default=False, nargs='?', type=str, help="start ZMQ server")
 parser.add_argument('-d', '--debug-mode', action='store_true', help="do not connect to GUI console when opening")
-parser.add_argument('--test', action='store_true', help="startup the program to test imported modules")
-args = parser.parse_args()
+parser.add_argument('-t', '--test', action='store_true', help="startup the program to test imported modules")
+ARGUMENTS = parser.parse_args()
+
+def check_update(progdlg: QProgressDialog) -> [str, bool]:
+    """Check for update."""
+    m = progdlg.maximum()
+    from core.QtModules import QCoreApplication
+    for i in range(m):
+        QCoreApplication.processEvents()
+        if progdlg.wasCanceled():
+            return
+        next = list(VERSION[:m])
+        next[i] += 1
+        url = "https://github.com/KmolYuan/Pyslvs-PyQt5/releases/tag/v{}.{:02}.{}".format(*next)
+        request = requests.get(url)
+        progdlg.setValue(i + 1)
+        if request.status_code == 200:
+            progdlg.setValue(m)
+            return url
+    return False

@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# __author__ = "Yuan Chang"
+# __copyright__ = "Copyright (C) 2016-2018"
+# __license__ = "AGPL"
+# __email__ = "pyslvs@gmail.com"
+
 from cpython cimport bool
 import numpy as np
 cimport numpy as np
@@ -6,24 +12,24 @@ from libc.stdlib cimport rand, RAND_MAX, srand
 #from libc.time cimport time
 from time import time
 
-# make true it is random everytime
+#Make sure it is 'random'.
 srand(int(time()))
 
 cdef double randV():
     return rand()/(RAND_MAX*1.01)
 
+cdef enum limit:
+    maxGen,
+    minFit,
+    maxTime
+
 cdef class Chromosome(object):
-    """
-    just copy the idea of genetic algorithm, pretty similar..
-    """
+    
     cdef public int n
     cdef public double f
     cdef public np.ndarray v
     
     def __cinit__(self, int n):
-        """
-        int n, dimension of question
-        """
         # dimension
         self.n = n
         # the gene
@@ -31,31 +37,29 @@ cdef class Chromosome(object):
         # the fitness value
         self.f = 0
     
-    def assign(self, Chromosome obj):
-        """
-        Chromosome obj
-        copy all attribute from obj to itself
-        """
+    cpdef void assign(self, Chromosome obj):
         self.n = obj.n
         self.v[:] = obj.v
         self.f = obj.f
 
 cdef class DiffertialEvolution(object):
-    cdef int strategy, D, NP, maxGen, rpt, gen, r1, r2, r3, r4, r5
-    cdef double F, CR, timeS, timeE
+    
+    cdef limit option
+    cdef int strategy, D, NP, maxGen, maxTime, rpt, gen, r1, r2, r3, r4, r5
+    cdef double F, CR, timeS, timeE, minFit
     cdef np.ndarray lb, ub, pop
     cdef object func, progress_fun, interrupt_fun
     cdef Chromosome lastgenbest, currentbest
-    cdef object fitnessTime, fitnessParameter
+    cdef list fitnessTime
     
-    def __cinit__(self, object func, object settings, object progress_fun=None, object interrupt_fun=None):
+    def __cinit__(self, object func, dict settings, object progress_fun=None, object interrupt_fun=None):
         """
         settings = {
             'strategy',
             'NP',
             'F',
             'CR',
-            'maxGen',
+            'maxGen', 'minFit' or 'maxTime',
             'report'
         }
         """
@@ -78,8 +82,22 @@ cdef class DiffertialEvolution(object):
         self.lb = np.array(self.func.get_lower())
         # up bound
         self.ub = np.array(self.func.get_upper())
-        # maxima generation, report: how many generation report status once
-        self.maxGen = settings['maxGen']
+        #Algorithm will stop when the limitation has happend.
+        self.maxGen = 0
+        self.minFit = 0
+        self.maxTime = 0
+        if 'maxGen' in settings:
+            self.option = maxGen
+            self.maxGen = settings['maxGen']
+        elif 'minFit' in settings:
+            self.option = minFit
+            self.minFit = settings['minFit']
+        elif 'maxTime' in settings:
+            self.option = maxTime
+            self.maxTime = settings['maxTime']
+        else:
+            raise Exception("Please give 'maxGen', 'minFit' or 'maxTime' limit.")
+        #Report function
         self.rpt = settings['report']
         self.progress_fun = progress_fun
         self.interrupt_fun = interrupt_fun
@@ -105,8 +123,7 @@ cdef class DiffertialEvolution(object):
         # setup benchmark
         self.timeS = time()
         self.timeE = 0
-        self.fitnessTime = ''
-        self.fitnessParameter = ''
+        self.fitnessTime = []
     
     cdef void checkParameter(self):
         """
@@ -118,8 +135,6 @@ cdef class DiffertialEvolution(object):
             raise Exception('NP shoud be integer and larger than 0')
         if self.CR < 0 or self.CR > 1:
             raise Exception('CR should be [0,1]')
-        if self.rpt > self.maxGen:
-            raise Exception('report should be larger than 0 and less than max genration')
         if self.strategy < 1 or self.strategy > 10:
             raise Exception('strategy should be [1,10]')
         for lower, upper in zip(self.lb, self.ub):
@@ -146,44 +161,51 @@ cdef class DiffertialEvolution(object):
         """
         find member that have minimum fitness value from pool
         """
-        return min(self.pop, key=lambda chrom:chrom.f)
+        cdef int i
+        cdef int index = 0
+        cdef Chromosome chrom
+        cdef double f = self.pop[0].f
+        for i in range(len(self.pop)):
+            chrom = self.pop[i]
+            if chrom.f < f:
+                index = i
+                f = chrom.f
+        return self.pop[index]
     
-    cdef void generateRandomVector(self, i):
+    cdef void generateRandomVector(self, int i):
         """
         generate new vector
         """
         while True:
             self.r1 = int(randV() * self.NP)
-            if not (self.r1 == i):
+            if self.r1 != i:
                 break
         while True:
             self.r2 = int(randV() * self.NP)
-            if not ((self.r2 == i) or (self.r2 == self.r1)):
+            if (self.r2 != i) and (self.r2 != self.r1):
                 break
         while True:
             self.r3 = int(randV() * self.NP)
-            if not ((self.r3 == i) or (self.r3 == self.r1) or (self.r3 == self.r2)):
+            if (self.r3 != i) and (self.r3 != self.r1) and (self.r3 != self.r2):
                 break
         while True:
             self.r4 = int(randV() * self.NP)
-            if not ((self.r4 == i) or (self.r4 == self.r1) or (self.r4 == self.r2) or (self.r4 == self.r3)):
+            if (self.r4 != i) and (self.r4 != self.r1) and (self.r4 != self.r2) and (self.r4 != self.r3):
                 break
         while True:
             self.r5 = int(randV() * self.NP)
-            if not ((self.r5 == i) or (self.r5 == self.r1) or (self.r5 == self.r2) or (self.r5 == self.r3) or (self.r5 == self.r4)):
+            if (self.r5 != i) and (self.r5 != self.r1) and (self.r5 != self.r2) and (self.r5 != self.r3) and (self.r5 != self.r4):
                 break
     
     cdef Chromosome recombination(self, int i):
         """
         use new vector, recombination the new one member to tmp
         """
-        cdef Chromosome tmp
-        cdef int n, L
-        tmp = Chromosome(self.D)
+        cdef Chromosome tmp = Chromosome(self.D)
         tmp.assign(self.pop[i])
-        n = int(randV() * self.D)
+        cdef int n = int(randV() * self.D)
+        cdef int L = 0
         if self.strategy==1:
-            L = 0
             while True:
                 tmp.v[n] = self.lastgenbest.v[n] + self.F*(self.pop[self.r2].v[n] - self.pop[self.r3].v[n])
                 n = (n + 1) % self.D
@@ -191,7 +213,6 @@ cdef class DiffertialEvolution(object):
                 if not (randV() < self.CR and L < self.D):
                     break
         elif self.strategy==2:
-            L = 0
             while True:
                 tmp.v[n] = self.pop[self.r1].v[n] + self.F*(self.pop[self.r2].v[n] - self.pop[self.r3].v[n])
                 n = (n + 1) % self.D
@@ -199,7 +220,6 @@ cdef class DiffertialEvolution(object):
                 if not (randV() < self.CR and L < self.D):
                     break
         elif self.strategy==3:
-            L = 0
             while True:
                 tmp.v[n] = tmp.v[n] + self.F*(self.lastgenbest.v[n] - tmp.v[n]) + self.F*(self.pop[self.r1].v[n] - self.pop[self.r2].v[n])
                 n = (n + 1) % self.D
@@ -207,7 +227,6 @@ cdef class DiffertialEvolution(object):
                 if not (randV() < self.CR and L < self.D):
                     break
         elif self.strategy==4:
-            L = 0
             while True:
                 tmp.v[n] = self.lastgenbest.v[n] + (self.pop[self.r1].v[n] + self.pop[self.r2].v[n] - self.pop[self.r3].v[n] - self.pop[self.r4].v[n]) * self.F
                 n = (n + 1) % self.D
@@ -215,7 +234,6 @@ cdef class DiffertialEvolution(object):
                 if not (randV() < self.CR and L < self.D):
                     break
         elif self.strategy==5:
-            L = 0
             while True:
                 tmp.v[n] = self.pop[self.r5].v[n] + (self.pop[self.r1].v[n] + self.pop[self.r2].v[n] - self.pop[self.r3].v[n] - self.pop[self.r4].v[n]) * self.F
                 n = (n + 1) % self.D
@@ -254,7 +272,7 @@ cdef class DiffertialEvolution(object):
         report current generation status
         """
         self.timeE = time()
-        self.fitnessTime += '%d,%.4f,%.2f;'%(self.gen, self.lastgenbest.f, self.timeE - self.timeS)
+        self.fitnessTime.append((self.gen, self.lastgenbest.f, self.timeE - self.timeS))
     
     cdef bool overbound(self, Chromosome member):
         """
@@ -267,6 +285,8 @@ cdef class DiffertialEvolution(object):
         return False
     
     cdef void generation_process(self):
+        cdef int i
+        cdef Chromosome tmp
         for i in range(self.NP):
             # generate new vector
             self.generateRandomVector(i)
@@ -296,19 +316,13 @@ cdef class DiffertialEvolution(object):
         else:
             if self.gen % 10 == 0:
                 self.report()
-        #progress
-        if self.progress_fun is not None:
-            self.progress_fun(self.gen, '%.4f'%self.lastgenbest.f)
     
-    cpdef run(self):
+    cpdef tuple run(self):
         """
         run the algorithm...
         """
         cdef Chromosome tmp
         cdef int i
-        # initial step
-        # generation 0
-        self.gen = 0
         # init the member's chromsome
         self.init()
         # find the best one(smallest fitness value)
@@ -321,21 +335,25 @@ cdef class DiffertialEvolution(object):
         self.report()
         # end initial step
         # the evolution journey is beggin...
-        if self.maxGen>0:
-            for self.gen in range(1, self.maxGen+1):
-                self.generation_process()
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
-        else:
-            while True:
-                self.generation_process()
-                self.gen += 1
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
+        while True:
+            self.gen += 1
+            if self.option == maxGen:
+                if (self.maxGen > 0) and (self.gen > self.maxGen):
+                    break
+            elif self.option == minFit:
+                if self.lastgenbest.f <= self.minFit:
+                    break
+            elif self.option == maxTime:
+                if (self.maxTime > 0) and (time() - self.timeS >= self.maxTime):
+                    break
+            self.generation_process()
+            #progress
+            if self.progress_fun is not None:
+                self.progress_fun(self.gen, "{:.04f}".format(self.lastgenbest.f))
+            #interrupt
+            if self.interrupt_fun is not None:
+                if self.interrupt_fun():
+                    break
         # the evolution journey is done, report the final status
         self.report()
         return self.func.get_coordinates(self.lastgenbest.v), self.fitnessTime

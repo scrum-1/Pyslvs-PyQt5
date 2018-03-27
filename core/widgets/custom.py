@@ -1,76 +1,119 @@
 # -*- coding: utf-8 -*-
-##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2018 Yuan Chang
-##E-mail: pyslvs@gmail.com
-##
-##This program is free software; you can redistribute it and/or modify
-##it under the terms of the GNU Affero General Public License as published by
-##the Free Software Foundation; either version 3 of the License, or
-##(at your option) any later version.
-##
-##This program is distributed in the hope that it will be useful,
-##but WITHOUT ANY WARRANTY; without even the implied warranty of
-##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##GNU Affero General Public License for more details.
-##
-##You should have received a copy of the GNU Affero General Public License
-##along with this program; if not, write to the Free Software
-##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from core.QtModules import *
+"""The custom widgets of main window."""
+
+__author__ = "Yuan Chang"
+__copyright__ = "Copyright (C) 2016-2018"
+__license__ = "AGPL"
+__email__ = "pyslvs@gmail.com"
+
+from core.QtModules import (
+    QAction,
+    Qt,
+    QMenu,
+    pyqtSlot,
+    QIcon,
+    QPixmap,
+    QPushButton,
+    QUndoView,
+)
 from core.info import VERSION
+from core.io import FileWidget
+from core.synthesis import (
+    NumberAndTypeSynthesis,
+    Collections,
+    DimensionalSynthesis
+)
 from .main_canvas import DynamicCanvas
 from .table import (
     PointTableWidget,
     LinkTableWidget,
     SelectionLabel
 )
-from .rotatable import RotatableView
-from core.io import FileWidget
-#['NumberAndTypeSynthesis', 'Collections', 'DimensionalSynthesis']
-from core.synthesis import *
+from .inputs import InputsWidget
 
 def initCustomWidgets(self):
-    appearance(self)
+    """Start up custom widgets."""
     undo_redo(self)
+    appearance(self)
     context_menu(self)
 
+def undo_redo(self):
+    """Undo list settings.
+    
+    + Undo stack.
+    + Undo view widget.
+    + Hot keys.
+    """
+    self.CommandStack.setUndoLimit(self.UndoLimit.value())
+    self.UndoLimit.valueChanged.connect(self.CommandStack.setUndoLimit)
+    self.CommandStack.indexChanged.connect(self.commandReload)
+    self.undoView = QUndoView(self.CommandStack)
+    self.undoView.setEmptyLabel("~ Start Pyslvs")
+    self.UndoRedoLayout.addWidget(self.undoView)
+    self.action_Redo = self.CommandStack.createRedoAction(self, "Redo")
+    self.action_Undo = self.CommandStack.createUndoAction(self, "Undo")
+    self.action_Redo.setShortcut("Ctrl+Shift+Z")
+    self.action_Redo.setStatusTip("Backtracking undo action.")
+    self.action_Redo.setIcon(QIcon(QPixmap(":/icons/redo.png")))
+    self.action_Undo.setShortcut("Ctrl+Z")
+    self.action_Undo.setStatusTip("Recover last action.")
+    self.action_Undo.setIcon(QIcon(QPixmap(":/icons/undo.png")))
+    self.menu_Edit.addAction(self.action_Undo)
+    self.menu_Edit.addAction(self.action_Redo)
+
 def appearance(self):
+    """Start up and initialize custom widgets."""
     #Version label
     self.version_label.setText("v{}.{}.{} ({})".format(*VERSION))
     #Entities tables.
     self.Entities_Point = PointTableWidget(self.Entities_Point_Widget)
-    self.Entities_Point.cellDoubleClicked.connect(self.on_action_Edit_Point_triggered)
-    self.Entities_Point.itemSelectionChanged.connect(self.pointSelection)
-    self.Entities_Point.deleteRequest.connect(self.on_action_Delete_Point_triggered)
+    self.Entities_Point.cellDoubleClicked.connect(
+        self.on_action_Edit_Point_triggered
+    )
+    self.Entities_Point.deleteRequest.connect(
+        self.on_action_Delete_Point_triggered
+    )
     self.Entities_Point_Layout.addWidget(self.Entities_Point)
     self.Entities_Link = LinkTableWidget(self.Entities_Link_Widget)
-    self.Entities_Link.cellDoubleClicked.connect(self.on_action_Edit_Link_triggered)
-    self.Entities_Link.dragIn.connect(self.addLinkGroup)
-    self.Entities_Link.deleteRequest.connect(self.on_action_Delete_Link_triggered)
+    self.Entities_Link.cellDoubleClicked.connect(
+        self.on_action_Edit_Link_triggered
+    )
+    self.Entities_Link.deleteRequest.connect(
+        self.on_action_Delete_Link_triggered
+    )
     self.Entities_Link_Layout.addWidget(self.Entities_Link)
     #Selection label on status bar right side.
     selectionLabel = SelectionLabel(self)
-    self.Entities_Point.rowSelectionChanged.connect(selectionLabel.updateSelectPoint)
+    self.Entities_Point.selectionLabelUpdate.connect(
+        selectionLabel.updateSelectPoint
+    )
     self.statusBar.addPermanentWidget(selectionLabel)
     #QPainter canvas window
     self.DynamicCanvasView = DynamicCanvas(self)
-    self.FreeMoveMode.toggled.connect(self.variableValueReset)
-    self.DynamicCanvasView.mouse_getSelection.connect(self.Entities_Point.setSelections)
-    self.DynamicCanvasView.mouse_getSelection.connect(self.inputs_points_setSelection)
-    self.DynamicCanvasView.mouse_freemoveSelection.connect(self.freemove_setCoordinate)
-    self.DynamicCanvasView.mouse_noSelection.connect(self.Entities_Point.clearSelection)
-    self.DynamicCanvasView.mouse_noSelection.connect(self.inputs_points_clearSelection)
+    self.DynamicCanvasView.mouse_getSelection.connect(
+        self.Entities_Point.setSelections
+    )
+    self.DynamicCanvasView.mouse_freemoveSelection.connect(
+        self.freemove_setCoordinate
+    )
+    self.DynamicCanvasView.mouse_noSelection.connect(
+        self.Entities_Point.clearSelection
+    )
     CleanSelectionAction = QAction("Clean selection", self)
     CleanSelectionAction.triggered.connect(self.Entities_Point.clearSelection)
     CleanSelectionAction.setShortcut("Esc")
     CleanSelectionAction.setShortcutContext(Qt.WindowShortcut)
     self.addAction(CleanSelectionAction)
-    self.DynamicCanvasView.mouse_getDoubleClickAdd.connect(self.qAddPointGroup)
-    self.DynamicCanvasView.mouse_getDoubleClickEdit.connect(self.on_action_Edit_Point_triggered)
+    self.DynamicCanvasView.mouse_getAltAdd.connect(self.qAddPointGroup)
+    self.DynamicCanvasView.mouse_getDoubleClickEdit.connect(
+        self.on_action_Edit_Point_triggered
+    )
     self.DynamicCanvasView.zoom_change.connect(self.ZoomBar.setValue)
     self.DynamicCanvasView.mouse_track.connect(self.context_menu_mouse_pos)
-    self.DynamicCanvasView.mouse_browse_track.connect(selectionLabel.updateMousePosition)
+    self.DynamicCanvasView.mouse_browse_track.connect(
+        selectionLabel.updateMousePosition
+    )
     self.canvasSplitter.insertWidget(0, self.DynamicCanvasView)
     self.canvasSplitter.setSizes([600, 10, 30])
     #Menu of free move mode.
@@ -88,7 +131,11 @@ def appearance(self):
         ("Rotate mode", "freemove_on"),
         ("Reflect mode", "freemove_on"),
     ]):
-        action = QAction(QIcon(QPixmap(":/icons/{}.png".format(icon))), text, self)
+        action = QAction(
+            QIcon(QPixmap(":/icons/{}.png".format(icon))),
+            text,
+            self
+        )
         action.triggered.connect(freeMoveMode_func(i, action.icon()))
         action.setShortcut("Ctrl+{}".format(i+1))
         action.setShortcutContext(Qt.WindowShortcut)
@@ -98,26 +145,84 @@ def appearance(self):
     self.FileWidget = FileWidget(self)
     self.SCMLayout.addWidget(self.FileWidget)
     self.FileWidget.commit_add.clicked.connect(self.on_action_Save_triggered)
-    self.FileWidget.branch_add.clicked.connect(self.on_action_Save_branch_triggered)
+    self.FileWidget.branch_add.clicked.connect(
+        self.on_action_Save_branch_triggered
+    )
     self.action_Stash.triggered.connect(self.FileWidget.on_commit_stash_clicked)
-    #Number and type synthesis
+    #Inputs widget.
+    self.InputsWidget = InputsWidget(self)
+    self.inputs_tab_layout.addWidget(self.InputsWidget)
+    self.FreeMoveMode.toggled.connect(self.InputsWidget.variableValueReset)
+    self.DynamicCanvasView.mouse_getSelection.connect(
+        self.InputsWidget.inputs_points_setSelection
+    )
+    self.DynamicCanvasView.mouse_noSelection.connect(
+        self.InputsWidget.inputs_points_clearSelection
+    )
+    #Number and type synthesis.
     self.NumberAndTypeSynthesis = NumberAndTypeSynthesis(self)
-    self.SynthesisTab.addTab(self.NumberAndTypeSynthesis, self.NumberAndTypeSynthesis.windowIcon(), "Structure")
+    self.SynthesisTab.addTab(
+        self.NumberAndTypeSynthesis,
+        self.NumberAndTypeSynthesis.windowIcon(),
+        "Structure"
+    )
     #Synthesis collections
     self.CollectionTabPage = Collections(self)
-    self.SynthesisTab.addTab(self.CollectionTabPage, self.CollectionTabPage.windowIcon(), "Collections")
-    self.NumberAndTypeSynthesis.addCollection = self.CollectionTabPage.CollectionsStructure.addCollection
-    self.FileWidget.CollectDataFunc = self.CollectionTabPage.CollectDataFunc #Call to get collections data.
-    self.FileWidget.TriangleDataFunc = self.CollectionTabPage.TriangleDataFunc #Call to get collections data.
-    self.FileWidget.loadCollectFunc = self.CollectionTabPage.CollectionsStructure.addCollections #Call to load collections data.
-    self.FileWidget.loadTriangleFunc = self.CollectionTabPage.CollectionsTriangularIteration.addCollections #Call to load collections data.
+    self.SynthesisTab.addTab(
+        self.CollectionTabPage,
+        self.CollectionTabPage.windowIcon(),
+        "Collections"
+    )
+    self.NumberAndTypeSynthesis.addCollection = (
+        self.CollectionTabPage.CollectionsStructure.addCollection
+    )
+    self.FileWidget.CollectDataFunc = (
+        self.CollectionTabPage.CollectDataFunc
+    ) #Call to get collections data.
+    self.FileWidget.TriangleDataFunc = (
+        self.CollectionTabPage.TriangleDataFunc
+    ) #Call to get triangle data.
+    self.FileWidget.InputsDataFunc = (lambda: tuple(
+        variable[:-1]
+        for variable in self.InputsWidget.get_inputs_variables()
+    )) #Call to get inputs variables data.
+    self.FileWidget.loadCollectFunc = (
+        self.CollectionTabPage.CollectionsStructure.addCollections
+    ) #Call to load collections data.
+    self.FileWidget.loadTriangleFunc = (
+        self.CollectionTabPage.CollectionsTriangularIteration.addCollections
+    ) #Call to load triangle data.
+    self.FileWidget.loadInputsFunc = (
+        self.InputsWidget.add_inputs_variables
+    ) #Call to load inputs variables data.
+    self.FileWidget.loadPathFunc = (
+        self.InputsWidget.loadPaths
+    ) #Call after loaded paths.
+    self.FileWidget.pathDataFunc = (
+        lambda: self.InputsWidget.pathData
+    ) #Call to get path data.
     #Dimensional synthesis
     self.DimensionalSynthesis = DimensionalSynthesis(self)
-    self.DimensionalSynthesis.fixPointRange.connect(self.DynamicCanvasView.update_ranges)
-    self.DimensionalSynthesis.pathChanged.connect(self.DynamicCanvasView.path_solving)
-    self.DimensionalSynthesis.mergeResult.connect(self.PathSolving_mergeResult)
-    self.FileWidget.loadAlgorithmFunc = self.DimensionalSynthesis.loadResults #Call after loaded algorithm results.
-    self.SynthesisTab.addTab(self.DimensionalSynthesis, self.DimensionalSynthesis.windowIcon(), "Dimensional")
+    self.DimensionalSynthesis.fixPointRange.connect(
+        self.DynamicCanvasView.update_ranges
+    )
+    self.DimensionalSynthesis.pathChanged.connect(
+        self.DynamicCanvasView.setSolvingPath
+    )
+    self.DimensionalSynthesis.mergeResult.connect(
+        self.dimensional_synthesis_mergeResult
+    )
+    self.FileWidget.AlgorithmDataFunc = (
+        lambda: self.DimensionalSynthesis.mechanism_data
+    ) #Call to get algorithm data.
+    self.FileWidget.loadAlgorithmFunc = (
+        self.DimensionalSynthesis.loadResults
+    ) #Call after loaded algorithm results.
+    self.SynthesisTab.addTab(
+        self.DimensionalSynthesis,
+        self.DimensionalSynthesis.windowIcon(),
+        "Dimensional"
+    )
     #Console dock will hide when startup.
     self.ConsoleWidget.hide()
     #Connect to GUI button switching.
@@ -135,25 +240,29 @@ def appearance(self):
     SelectAllAction.setShortcut("Ctrl+A")
     SelectAllAction.setShortcutContext(Qt.WindowShortcut)
     self.addAction(SelectAllAction)
-    #Add inputs QDial.
-    self.inputs_Degree = QDial()
-    self.inputs_Degree.setEnabled(False)
-    self.inputs_Degree.valueChanged.connect(self.variableValueUpdate)
-    self.inputs_dial_layout.addWidget(RotatableView(self.inputs_Degree))
-    self.inputs_playShaft = QTimer(self)
-    self.inputs_playShaft.setInterval(10)
-    self.inputs_playShaft.timeout.connect(self.inputs_change_index)
-    self.inputs_variable_stop.clicked.connect(self.variableValueReset)
     #While value change, update the canvas widget.
+    self.Entities_Point.rowSelectionChanged.connect(
+        self.DynamicCanvasView.changePointsSelection
+    )
     self.ZoomBar.valueChanged.connect(self.DynamicCanvasView.setZoom)
     self.LineWidth.valueChanged.connect(self.DynamicCanvasView.setLinkWidth)
     self.PathWidth.valueChanged.connect(self.DynamicCanvasView.setPathWidth)
     self.Font_size.valueChanged.connect(self.DynamicCanvasView.setFontSize)
-    self.action_Display_Point_Mark.toggled.connect(self.DynamicCanvasView.setPointMark)
-    self.action_Display_Dimensions.toggled.connect(self.DynamicCanvasView.setShowDimension)
-    self.SelectionRadius.valueChanged.connect(self.DynamicCanvasView.setSelectionRadius)
-    self.LinkageTransparency.valueChanged.connect(self.DynamicCanvasView.setTransparency)
-    self.MarginFactor.valueChanged.connect(self.DynamicCanvasView.setMarginFactor)
+    self.action_Display_Point_Mark.toggled.connect(
+        self.DynamicCanvasView.setPointMark
+    )
+    self.action_Display_Dimensions.toggled.connect(
+        self.DynamicCanvasView.setShowDimension
+    )
+    self.SelectionRadius.valueChanged.connect(
+        self.DynamicCanvasView.setSelectionRadius
+    )
+    self.LinkageTransparency.valueChanged.connect(
+        self.DynamicCanvasView.setTransparency
+    )
+    self.MarginFactor.valueChanged.connect(
+        self.DynamicCanvasView.setMarginFactor
+    )
     #Splitter stretch factor.
     self.MainSplitter.setStretchFactor(0, 4)
     self.MainSplitter.setStretchFactor(1, 15)
@@ -161,16 +270,20 @@ def appearance(self):
     self.synthesis_splitter.setSizes([100, 500])
     #Enable mechanism menu actions when shows.
     self.menu_Mechanism.aboutToShow.connect(self.enableMenu)
-    #SetIn function connections.
-    self.action_Zoom_to_fit.triggered.connect(self.DynamicCanvasView.SetIn)
-    self.ResetCanvas.clicked.connect(self.DynamicCanvasView.SetIn)
+    #zoom_to_fit function connections.
+    self.action_Zoom_to_fit.triggered.connect(
+        self.DynamicCanvasView.zoom_to_fit
+    )
+    self.ResetCanvas.clicked.connect(self.DynamicCanvasView.zoom_to_fit)
     #Zoom text button
     Zoom_menu = QMenu(self)
+    
     def zoom_level(level):
         @pyqtSlot()
         def func():
             self.ZoomBar.setValue(level)
         return func
+    
     for level in range(
         self.ZoomBar.minimum() - self.ZoomBar.minimum()%100 + 100,
         500 + 1,
@@ -184,28 +297,8 @@ def appearance(self):
     Zoom_menu.addAction(action)
     self.ZoomText.setMenu(Zoom_menu)
 
-def undo_redo(self):
-    #Undo list settings.
-    self.FileState.setUndoLimit(self.UndoLimit.value())
-    self.UndoLimit.valueChanged.connect(self.FileState.setUndoLimit)
-    self.FileState.indexChanged.connect(self.commandReload)
-    self.undoView = QUndoView(self.FileState)
-    self.undoView.setEmptyLabel("~ Start Pyslvs")
-    self.UndoRedoLayout.addWidget(self.undoView)
-    self.action_Redo = self.FileState.createRedoAction(self, "Redo")
-    self.action_Undo = self.FileState.createUndoAction(self, "Undo")
-    self.action_Redo.setShortcut("Ctrl+Shift+Z")
-    self.action_Redo.setStatusTip("Backtracking undo action.")
-    self.action_Redo.setIcon(QIcon(QPixmap(":/icons/redo.png")))
-    self.action_Undo.setShortcut("Ctrl+Z")
-    self.action_Undo.setStatusTip("Recover last action.")
-    self.action_Undo.setIcon(QIcon(QPixmap(":/icons/undo.png")))
-    self.menu_Edit.addAction(self.action_Undo)
-    self.menu_Edit.addAction(self.action_Redo)
-
 def context_menu(self):
-    '''
-    Entities_Point context menu
+    '''Entities_Point context menu
     
     + Add
     + Edit
@@ -219,16 +312,22 @@ def context_menu(self):
     -------
     + Delete
     '''
-    self.Entities_Point_Widget.customContextMenuRequested.connect(self.on_point_context_menu)
+    self.Entities_Point_Widget.customContextMenuRequested.connect(
+        self.on_point_context_menu
+    )
     self.popMenu_point = QMenu(self)
     self.popMenu_point.setSeparatorsCollapsible(True)
     self.action_point_context_add = QAction("&Add", self)
-    self.action_point_context_add.triggered.connect(self.on_action_New_Point_triggered)
+    self.action_point_context_add.triggered.connect(
+        self.on_action_New_Point_triggered
+    )
     self.popMenu_point.addAction(self.action_point_context_add)
     #New Link
     self.popMenu_point.addAction(self.action_New_Link)
     self.action_point_context_edit = QAction("&Edit", self)
-    self.action_point_context_edit.triggered.connect(self.on_action_Edit_Point_triggered)
+    self.action_point_context_edit.triggered.connect(
+        self.on_action_Edit_Point_triggered
+    )
     self.popMenu_point.addAction(self.action_point_context_edit)
     self.action_point_context_lock = QAction("&Fixed", self)
     self.action_point_context_lock.setCheckable(True)
@@ -245,10 +344,11 @@ def context_menu(self):
     self.popMenu_point.addAction(self.action_point_context_copyPoint)
     self.popMenu_point.addSeparator()
     self.action_point_context_delete = QAction("&Delete", self)
-    self.action_point_context_delete.triggered.connect(self.on_action_Delete_Point_triggered)
+    self.action_point_context_delete.triggered.connect(
+        self.on_action_Delete_Point_triggered
+    )
     self.popMenu_point.addAction(self.action_point_context_delete)
-    '''
-    Entities_Link context menu
+    '''Entities_Link context menu
     
     + Add
     + Edit
@@ -257,14 +357,20 @@ def context_menu(self):
     -------
     + Delete
     '''
-    self.Entities_Link_Widget.customContextMenuRequested.connect(self.on_link_context_menu)
+    self.Entities_Link_Widget.customContextMenuRequested.connect(
+        self.on_link_context_menu
+    )
     self.popMenu_link = QMenu(self)
     self.popMenu_link.setSeparatorsCollapsible(True)
     self.action_link_context_add = QAction("&Add", self)
-    self.action_link_context_add.triggered.connect(self.on_action_New_Link_triggered)
+    self.action_link_context_add.triggered.connect(
+        self.on_action_New_Link_triggered
+    )
     self.popMenu_link.addAction(self.action_link_context_add)
     self.action_link_context_edit = QAction("&Edit", self)
-    self.action_link_context_edit.triggered.connect(self.on_action_Edit_Link_triggered)
+    self.action_link_context_edit.triggered.connect(
+        self.on_action_Edit_Link_triggered
+    )
     self.popMenu_link.addAction(self.action_link_context_edit)
     self.action_link_context_copydata = QAction("&Copy table data", self)
     self.action_link_context_copydata.triggered.connect(self.tableCopy_Links)
@@ -277,10 +383,11 @@ def context_menu(self):
     self.popMenu_link.addAction(self.action_link_context_constrain)
     self.popMenu_link.addSeparator()
     self.action_link_context_delete = QAction("&Delete", self)
-    self.action_link_context_delete.triggered.connect(self.on_action_Delete_Link_triggered)
+    self.action_link_context_delete.triggered.connect(
+        self.on_action_Delete_Link_triggered
+    )
     self.popMenu_link.addAction(self.action_link_context_delete)
-    '''
-    DynamicCanvasView context menu
+    '''DynamicCanvasView context menu
     
     + Add
     + Add [fixed]
@@ -297,7 +404,9 @@ def context_menu(self):
     + Delete
     '''
     self.DynamicCanvasView.setContextMenuPolicy(Qt.CustomContextMenu)
-    self.DynamicCanvasView.customContextMenuRequested.connect(self.on_canvas_context_menu)
+    self.DynamicCanvasView.customContextMenuRequested.connect(
+        self.on_canvas_context_menu
+    )
     self.popMenu_canvas = QMenu(self)
     self.popMenu_canvas.setSeparatorsCollapsible(True)
     self.action_canvas_context_add = QAction("&Add", self)
@@ -306,10 +415,14 @@ def context_menu(self):
     #New Link
     self.popMenu_canvas.addAction(self.action_New_Link)
     self.action_canvas_context_fix_add = QAction("Add [fixed]", self)
-    self.action_canvas_context_fix_add.triggered.connect(self.addPointGroup_fixed)
+    self.action_canvas_context_fix_add.triggered.connect(
+        self.addPointGroup_fixed
+    )
     self.popMenu_canvas.addAction(self.action_canvas_context_fix_add)
     self.action_canvas_context_path = QAction("Add [target path]", self)
-    self.action_canvas_context_path.triggered.connect(self.PathSolving_add_rightClick)
+    self.action_canvas_context_path.triggered.connect(
+        self.dimensional_synthesis_add_rightClick
+    )
     self.popMenu_canvas.addAction(self.action_canvas_context_path)
     #The following actions will be shown when points selected.
     self.popMenu_canvas.addAction(self.action_point_context_edit)
@@ -318,11 +431,3 @@ def context_menu(self):
     self.popMenu_canvas.addAction(self.action_point_context_copyPoint)
     self.popMenu_canvas.addSeparator()
     self.popMenu_canvas.addAction(self.action_point_context_delete)
-    '''
-    Inputs record context menu
-    
-    + Copy data from Point{}
-    + ...
-    '''
-    self.inputs_record.customContextMenuRequested.connect(self.on_inputs_record_context_menu)
-    self.popMenu_inputs_record = QMenu(self)

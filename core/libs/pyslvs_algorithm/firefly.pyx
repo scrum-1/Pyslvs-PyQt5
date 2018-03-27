@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# __author__ = "Yuan Chang"
+# __copyright__ = "Copyright (C) 2016-2018"
+# __license__ = "AGPL"
+# __email__ = "pyslvs@gmail.com"
+
 from libc.math cimport sqrt, exp, log10
 from cpython cimport bool
 from array import array
@@ -8,13 +14,19 @@ from libc.stdlib cimport rand, RAND_MAX, srand
 #from libc.time cimport time
 from time import time
 
-# make true it is random everytime
+#Make sure it is 'random'.
 srand(int(time()))
 
 cdef double randV():
     return rand()/(RAND_MAX*1.01)
 
+cdef enum limit:
+    maxGen,
+    minFit,
+    maxTime
+
 cdef class Chromosome(object):
+    
     cdef public int n
     cdef public double f
     cdef public np.ndarray v
@@ -27,27 +39,30 @@ cdef class Chromosome(object):
         self.f = 0
     
     cdef double distance(self, Chromosome obj):
-        cdef double dist
-        dist = 0
+        cdef double dist = 0
+        cdef double diff
         for i in range(self.n):
-            dist += (self.v[i] - obj.v[i])**2
+            diff = self.v[i] - obj.v[i]
+            dist += diff * diff
         return sqrt(dist)
     
-    cdef void assign(self, Chromosome obj):
+    cpdef void assign(self, Chromosome obj):
         self.n = obj.n
         self.v[:] = obj.v
         self.f = obj.f
 
 cdef class Firefly(object):
-    cdef int D, n, maxGen, rp, gen
-    cdef double alpha, alpha0, betaMin, beta0, gamma, timeS, timeE
+    
+    cdef limit option
+    cdef int D, n, maxGen, maxTime, rpt, gen
+    cdef double alpha, alpha0, betaMin, beta0, gamma, timeS, timeE, minFit
     cdef object func, progress_fun, interrupt_fun
     cdef np.ndarray lb, ub
     cdef np.ndarray fireflys
     cdef Chromosome genbest, bestFirefly
-    cdef object fitnessTime, fitnessParameter
+    cdef list fitnessTime
     
-    def __init__(self, object func, object settings, object progress_fun=None, object interrupt_fun=None):
+    def __init__(self, object func, dict settings, object progress_fun=None, object interrupt_fun=None):
         """
         settings = {
             'n',
@@ -55,7 +70,7 @@ cdef class Firefly(object):
             'betaMin',
             'beta0',
             'gamma',
-            'maxGen',
+            'maxGen', 'minFit' or 'maxTime',
             'report'
         }
         """
@@ -83,9 +98,23 @@ cdef class Firefly(object):
         self.fireflys = np.ndarray((self.n,), dtype=np.object)
         for i in range(self.n):
             self.fireflys[i] = Chromosome(self.D)
-        # maxima generation, report: how many generation report status once
-        self.maxGen = settings['maxGen']
-        self.rp = settings['report']
+        #Algorithm will stop when the limitation has happend.
+        self.maxGen = 0
+        self.minFit = 0
+        self.maxTime = 0
+        if 'maxGen' in settings:
+            self.option = maxGen
+            self.maxGen = settings['maxGen']
+        elif 'minFit' in settings:
+            self.option = minFit
+            self.minFit = settings['minFit']
+        elif 'maxTime' in settings:
+            self.option = maxTime
+            self.maxTime = settings['maxTime']
+        else:
+            raise Exception("Please give 'maxGen', 'minFit' or 'maxTime' limit.")
+        #Report function
+        self.rpt = settings['report']
         self.progress_fun = progress_fun
         self.interrupt_fun = interrupt_fun
         # generation of current
@@ -98,15 +127,14 @@ cdef class Firefly(object):
         # setup benchmark
         self.timeS = time()
         self.timeE = 0
-        self.fitnessTime = ''
-        self.fitnessParameter = ''
+        self.fitnessTime = []
     
     cdef void init(self):
         cdef int i, j
         for i in range(self.n):
             # init the Chromosome
             for j in range(self.D):
-                self.fireflys[i].v[j]=randV()*(self.ub[j]-self.lb[j])+self.lb[j];
+                self.fireflys[i].v[j] = randV()*(self.ub[j] - self.lb[j]) + self.lb[j];
     
     cdef void movefireflies(self):
         cdef int i, j, k
@@ -127,17 +155,16 @@ cdef class Firefly(object):
             firefly.f = self.func(firefly.v)
     
     cdef bool movefly(self, Chromosome me, Chromosome she):
-        cdef double r, beta
+        if me.f <= she.f:
+            return False
+        cdef double r = me.distance(she)
+        cdef double beta = (self.beta0 - self.betaMin)*exp(-self.gamma*r*r)+self.betaMin
         cdef int i
-        if me.f > she.f:
-            r = me.distance(she)
-            beta = (self.beta0-self.betaMin)*exp(-self.gamma*(r**2))+self.betaMin
-            for i in range(me.n):
-                scale = self.ub[i] - self.lb[i]
-                me.v[i] += beta * (she.v[i] - me.v[i]) + self.alpha*(randV()-0.5) * scale
-                me.v[i] = self.check(i, me.v[i])
-            return True
-        return False
+        for i in range(me.n):
+            scale = self.ub[i] - self.lb[i]
+            me.v[i] += beta * (she.v[i] - me.v[i]) + self.alpha*(randV()-0.5) * scale
+            me.v[i] = self.check(i, me.v[i])
+        return True
     
     cdef double check(self, int i, double v):
         if v > self.ub[i]:
@@ -148,11 +175,20 @@ cdef class Firefly(object):
             return v
     
     cdef Chromosome findFirefly(self):
-        return min(self.fireflys, key=lambda chrom:chrom.f)
+        cdef int i
+        cdef int index = 0
+        cdef Chromosome chrom
+        cdef double f = self.fireflys[0].f
+        for i in range(len(self.fireflys)):
+            chrom = self.fireflys[i]
+            if chrom.f < f:
+                index = i
+                f = chrom.f
+        return self.fireflys[index]
     
     cdef void report(self):
         self.timeE = time()
-        self.fitnessTime += '%d,%.4f,%.2f;'%(self.gen, self.bestFirefly.f, self.timeE - self.timeS)
+        self.fitnessTime.append((self.gen, self.bestFirefly.f, self.timeE - self.timeS))
     
     cdef void calculate_new_alpha(self):
         self.alpha = self.alpha0 * log10(self.genbest.f + 1)
@@ -168,35 +204,36 @@ cdef class Firefly(object):
             self.bestFirefly.assign(self.genbest)
         # self.bestFirefly.assign(gen_best)
         self.calculate_new_alpha()
-        if self.rp != 0:
-            if self.gen % self.rp == 0:
+        if self.rpt != 0:
+            if self.gen % self.rpt == 0:
                 self.report()
         else:
             if self.gen % 10 == 0:
                 self.report()
-        #progress
-        if self.progress_fun is not None:
-            self.progress_fun(self.gen, '%.4f'%self.bestFirefly.f)
     
-    cpdef run(self):
+    cpdef tuple run(self):
         self.init()
         self.evaluate()
         self.bestFirefly.assign(self.fireflys[0])
         self.report()
-        if self.maxGen>0:
-            for self.gen in range(1, self.maxGen+1):
-                self.generation_process()
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
-        else:
-            while True:
-                self.generation_process()
-                self.gen += 1
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
+        while True:
+            self.gen += 1
+            if self.option == maxGen:
+                if (self.maxGen > 0) and (self.gen > self.maxGen):
+                    break
+            elif self.option == minFit:
+                if self.bestFirefly.f <= self.minFit:
+                    break
+            elif self.option == maxTime:
+                if (self.maxTime > 0) and (time() - self.timeS >= self.maxTime):
+                    break
+            self.generation_process()
+            #progress
+            if self.progress_fun is not None:
+                self.progress_fun(self.gen, "{:.04f}".format(self.bestFirefly.f))
+            #interrupt
+            if self.interrupt_fun is not None:
+                if self.interrupt_fun():
+                    break
         self.report()
         return self.func.get_coordinates(self.bestFirefly.v), self.fitnessTime

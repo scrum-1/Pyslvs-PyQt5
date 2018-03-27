@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# __author__ = "Yuan Chang"
+# __copyright__ = "Copyright (C) 2016-2018"
+# __license__ = "AGPL"
+# __email__ = "pyslvs@gmail.com"
+
 from libc.math cimport (
     pow,
     sqrt,
@@ -12,6 +18,7 @@ from cpython cimport bool
 nan = float("nan")
 
 cdef class Coordinate(object):
+    
     cdef public double x
     cdef public double y
     
@@ -25,14 +32,14 @@ cdef class Coordinate(object):
     cpdef bool isnan(self):
         return isnan(self.x) or isnan(self.y)
 
-cpdef object PLAP(Coordinate A, double L0, double a0, Coordinate B, bool inverse=False):
+cpdef tuple PLAP(Coordinate A, double L0, double a0, Coordinate B, bool inverse=False):
     cdef double b0 = atan2((B.y - A.y), (B.x - A.x))
     if inverse:
         return (A.x + L0*sin(b0 - a0), A.y + L0*cos(b0 - a0))
     else:
         return (A.x + L0*sin(b0 + a0), A.y + L0*cos(b0 + a0))
 
-cpdef object PLLP(Coordinate A, double L0, double R0, Coordinate B, bool inverse=False):
+cpdef tuple PLLP(Coordinate A, double L0, double R0, Coordinate B, bool inverse=False):
     cdef double dx = B.x - A.x
     cdef double dy = B.y - A.y
     cdef double d = A.distance(B)
@@ -54,7 +61,7 @@ cpdef object PLLP(Coordinate A, double L0, double R0, Coordinate B, bool inverse
     else:
         return (xm - h*dy/d, ym + h*dx/d)
 
-cpdef object PLPP(Coordinate A, double L0, Coordinate B, Coordinate C, bool inverse=False):
+cpdef tuple PLPP(Coordinate A, double L0, Coordinate B, Coordinate C, bool inverse=False):
     cdef double x1 = A.x
     cdef double y1 = A.y
     cdef double x2 = B.x
@@ -91,3 +98,37 @@ cpdef bool legal_crank(Coordinate A, Coordinate B, Coordinate C, Coordinate D):
     cdef double ground = A.distance(B)
     cdef double connector = C.distance(D)
     return (driver + connector <= ground + follower) or (driver + ground <= connector + follower)
+
+cdef str get_from_parenthesis(str s, str front, str back):
+    return s[s.find(front)+1:s.find(back)]
+
+cdef str get_front_of_parenthesis(str s, str front):
+    return s[:s.find(front)]
+
+#Use to generate path data.
+cpdef void expr_parser(str exprs, dict data_list):
+    '''
+    exprs: "PLAP[A,a0,L1,B](C);PLLP[C,L1,L2,B](D);..."
+    data_list: {'a0':0., 'L1':10., 'A':(30., 40.), ...}
+    '''
+    cdef str expr, f, name
+    cdef list params
+    cdef object p
+    cdef list args
+    for expr in exprs.split(';'):
+        f = get_front_of_parenthesis(expr, '[')
+        params = get_from_parenthesis(expr, '[', ']').split(',')
+        target = get_from_parenthesis(expr, '(', ')')
+        args = []
+        for name in params:
+            p = data_list[name]
+            if type(p)==tuple or type(p)==list:
+                args.append(Coordinate(*p))
+            else:
+                args.append(p)
+        if f=='PLAP':
+            data_list[target] = PLAP(*args)
+        elif f=='PLLP':
+            data_list[target] = PLLP(*args)
+        elif f=='PLPP':
+            data_list[target] = PLPP(*args)
