@@ -30,6 +30,8 @@
     <file>icons/bearing.png</file>
     <file>icons/BrowseAim.png</file>
     <file>icons/capture.png</file>
+    <file>icons/chart.png</file>
+    <file>icons/clean.png</file>
     <file>icons/close.png</file>
     <file>icons/collection-structure.png</file>
     <file>icons/collection-triangular-iteration.png</file>
@@ -48,6 +50,7 @@
     <file>icons/freemove_on.png</file>
     <file>icons/fullscreen.png</file>
     <file>icons/git.png</file>
+    <file>icons/guide.png</file>
     <file>icons/interrupted.png</file>
     <file>icons/konsole.png</file>
     <file>icons/link.png</file>
@@ -59,6 +62,7 @@
     <file>icons/newfile.png</file>
     <file>icons/normalsized.png</file>
     <file>icons/NumberAndTypeSynthesis.png</file>
+    <file>icons/paste.png</file>
     <file>icons/PathTrack.png</file>
     <file>icons/pause.png</file>
     <file>icons/play.png</file>

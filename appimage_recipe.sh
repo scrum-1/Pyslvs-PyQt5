@@ -18,12 +18,15 @@ cd ENV/$APP.AppDir/
 ########################################################################
 
 mkdir -p usr
-virtualenv --no-site-packages --python=python3 usr
+virtualenv --always-copy --python=python3 ./usr
+
+#Copy other modules.
+cp /usr/lib/python3.5/ssl.py ./usr/lib/python3.5/ssl.py
 
 source usr/bin/activate
 
 # Source some helper functions
-wget -q https://raw.githubusercontent.com/AppImage/AppImages/87a312129c0db40285612727adffad2a4dcc0647/functions.sh -O ./functions.sh
+wget -q https://raw.githubusercontent.com/AppImage/AppImages/master/functions.sh -O ./functions.sh
 . ./functions.sh
 
 mkdir -p usr/bin/
@@ -48,6 +51,12 @@ chmod a+x usr/bin/$LOWERAPP
 cp ../../icons_rc.py usr/bin
 cp ../../preview_rc.py usr/bin
 cp -r ../../core usr/bin
+rm -f usr/bin/core/libs/pyslvs_algorithm/*.c
+rm -f usr/bin/core/libs/pyslvs_algorithm/*.pyx
+rm -fr usr/bin/core/libs/pyslvs_algorithm/build
+rm -f usr/bin/core/libs/pyslvs_topologic/*.c
+rm -f usr/bin/core/libs/pyslvs_topologic/*.pyx
+rm -fr usr/bin/core/libs/pyslvs_topologic/build
 
 ########################################################################
 # Finalize the AppDir
@@ -61,7 +70,6 @@ cd ENV/$APP.AppDir/
 
 cat > $LOWERAPP.desktop <<EOF
 [Desktop Entry]
-Version=$VERSION
 Name=$APP
 Exec=$LOWERAPP
 Type=Application

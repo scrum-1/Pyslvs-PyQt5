@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/home/ahshoe/桌面/Pyslvs-PyQt5/core/synthesis/DimensionalSynthesis/progress.ui'
+# Form implementation generated from reading ui file '/home/ahshoe/桌面/Pyslvs-PyQt5/core/synthesis/DimensionalSynthesis/DimensionalSynthesis_dialog/progress.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.10
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,43 +11,35 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(600, 313)
-        Dialog.setMinimumSize(QtCore.QSize(600, 313))
-        Dialog.setMaximumSize(QtCore.QSize(600, 313))
+        Dialog.resize(597, 314)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(":/icons/DimensionalSynthesis.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         Dialog.setWindowIcon(icon)
         Dialog.setModal(True)
         self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.label = QtWidgets.QLabel(Dialog)
-        self.label.setWordWrap(True)
-        self.label.setObjectName("label")
-        self.verticalLayout.addWidget(self.label)
-        self.argumentText = QtWidgets.QTextBrowser(Dialog)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.argumentText.sizePolicy().hasHeightForWidth())
-        self.argumentText.setSizePolicy(sizePolicy)
-        self.argumentText.setMaximumSize(QtCore.QSize(16777215, 30))
-        self.argumentText.setStyleSheet("background-color: rgb(0, 0, 0);\n"
-"color: rgb(255, 255, 255);")
-        self.argumentText.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.argumentText.setObjectName("argumentText")
-        self.verticalLayout.addWidget(self.argumentText)
+        self.main_label = QtWidgets.QLabel(Dialog)
+        self.main_label.setWordWrap(True)
+        self.main_label.setObjectName("main_label")
+        self.verticalLayout.addWidget(self.main_label)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout.addItem(spacerItem)
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label_6 = QtWidgets.QLabel(Dialog)
+        self.label_6.setObjectName("label_6")
+        self.horizontalLayout_2.addWidget(self.label_6)
+        self.time_label = QtWidgets.QLabel(Dialog)
+        self.time_label.setObjectName("time_label")
+        self.horizontalLayout_2.addWidget(self.time_label)
         spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem1)
         self.label_4 = QtWidgets.QLabel(Dialog)
         self.label_4.setObjectName("label_4")
         self.horizontalLayout_2.addWidget(self.label_4)
-        self.maxGen_label = QtWidgets.QLabel(Dialog)
-        self.maxGen_label.setObjectName("maxGen_label")
-        self.horizontalLayout_2.addWidget(self.maxGen_label)
+        self.batch_label = QtWidgets.QLabel(Dialog)
+        self.batch_label.setObjectName("batch_label")
+        self.horizontalLayout_2.addWidget(self.batch_label)
         self.label_7 = QtWidgets.QLabel(Dialog)
         self.label_7.setObjectName("label_7")
         self.horizontalLayout_2.addWidget(self.label_7)
@@ -103,11 +95,12 @@ class Ui_Dialog(object):
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "Dimensional Synthesis"))
-        self.label.setText(_translate("Dialog", "<html><head/><body><p><span style=\" font-size:12pt;\">Pyslvs will start the algorithm via the ZMQ module.<br/>More servers can save more time.<br/><br/>Start Pyslvs server by following argument:<br/>(for example, localhost)</span></p></body></html>"))
+        self.main_label.setText(_translate("Dialog", "<html><head/><body><p><span style=\"font-size:12pt;\">This action will take some times, depending on the length of path, advanced settings and your computer performance.</p></body></html>"))
+        self.label_6.setText(_translate("Dialog", "Time passed:"))
+        self.time_label.setText(_translate("Dialog", "00:00:00"))
         self.label_4.setText(_translate("Dialog", "Batch execution:"))
-        self.maxGen_label.setText(_translate("Dialog", "0"))
-        self.label_7.setText(_translate("Dialog", "generation(s) with"))
-        self.label_5.setText(_translate("Dialog", "time(s)"))
+        self.label_7.setText(_translate("Dialog", "with"))
+        self.label_5.setText(_translate("Dialog", "time(s)."))
         self.label_2.setText(_translate("Dialog", "<html><head/><body><p><span style=\" color:#ff0000;\">※ The interrupt button will stop the process, but you can keep the result.</span></p></body></html>"))
         self.label_3.setText(_translate("Dialog", "Fitness: "))
         self.fitness_label.setText(_translate("Dialog", "N/A"))

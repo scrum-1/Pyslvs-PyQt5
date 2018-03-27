@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+
+# __author__ = "Yuan Chang"
+# __copyright__ = "Copyright (C) 2016-2018"
+# __license__ = "AGPL"
+# __email__ = "pyslvs@gmail.com"
+
 from libc.math cimport fmod, pow
 import numpy as np
 cimport numpy as np
@@ -13,6 +19,11 @@ srand(int(time()))
 cdef double randV():
     return rand()/(RAND_MAX*1.01)
 
+cdef enum limit:
+    maxGen,
+    minFit,
+    maxTime
+
 cdef class Chromosome(object):
     cdef public int n
     cdef public double f
@@ -23,34 +34,30 @@ cdef class Chromosome(object):
         self.f = 0.0
         self.v = np.zeros(n)
     
-    def cp(self, Chromosome obj):
-        """
-        copy all atribute from another chromsome object
-        """
+    cdef void cp(self, Chromosome obj):
         self.n = obj.n
-        self.f = obj.f
         self.v[:] = obj.v
+        self.f = obj.f
     
-    def is_self(self, obj):
-        """
-        check the object is self?
-        """
-        return obj is self
+    cdef inline bool is_not_self(self, Chromosome obj):
+        return obj is not self
     
-    def assign(self, obj):
-        if not self.is_self(obj):
+    cpdef void assign(self, Chromosome obj):
+        if self.is_not_self(obj):
             self.cp(obj)
 
 cdef class Genetic(object):
-    cdef int nParm, nPop, maxGen, gen, rpt
-    cdef double pCross, pMute, pWin, bDelta, iseed, mask, seed, timeS, timeE
+    
+    cdef limit option
+    cdef int nParm, nPop, maxGen, maxTime, gen, rpt
+    cdef double pCross, pMute, pWin, bDelta, iseed, mask, seed, timeS, timeE, minFit
     cdef object func, progress_fun, interrupt_fun
     cdef np.ndarray chrom, newChrom, babyChrom
     cdef Chromosome chromElite, chromBest
     cdef np.ndarray maxLimit, minLimit
-    cdef object fitnessTime, fitnessParameter
+    cdef list fitnessTime
     
-    def __cinit__(self, object func, object settings, object progress_fun=None, object interrupt_fun=None):
+    def __cinit__(self, object func, dict settings, object progress_fun=None, object interrupt_fun=None):
         """
         settings = {
             'nPop',
@@ -58,7 +65,7 @@ cdef class Genetic(object):
             'pMute',
             'pWin',
             'bDelta',
-            'maxGen',
+            'maxGen' or 'minFit' or 'maxTime',
             'report'
         }
         """
@@ -69,7 +76,20 @@ cdef class Genetic(object):
         self.pMute = settings['pMute']
         self.pWin = settings['pWin']
         self.bDelta = settings['bDelta']
-        self.maxGen = settings['maxGen']
+        self.maxGen = 0
+        self.minFit = 0
+        self.maxTime = 0
+        if 'maxGen' in settings:
+            self.option = maxGen
+            self.maxGen = settings['maxGen']
+        elif 'minFit' in settings:
+            self.option = minFit
+            self.minFit = settings['minFit']
+        elif 'maxTime' in settings:
+            self.option = maxTime
+            self.maxTime = settings['maxTime']
+        else:
+            raise Exception("Please give 'maxGen', 'minFit' or 'maxTime' limit.")
         self.rpt = settings['report']
         self.progress_fun = progress_fun
         self.interrupt_fun = interrupt_fun
@@ -86,17 +106,16 @@ cdef class Genetic(object):
         self.chromElite = Chromosome(self.nParm)
         self.chromBest = Chromosome(self.nParm)
         # low bound
-        self.minLimit = np.array(self.func.get_lower())
+        self.minLimit = self.func.get_lower()
         # up bound
-        self.maxLimit = np.array(self.func.get_upper())
+        self.maxLimit = self.func.get_upper()
         # maxgen and gen
         self.gen = 0
         
         # setup benchmark
         self.timeS = time()
         self.timeE = 0
-        self.fitnessTime = ''
-        self.fitnessParameter = ''
+        self.fitnessTime = []
     
     cdef int random(self, int k)except *:
         return int(randV()*k)
@@ -122,9 +141,9 @@ cdef class Genetic(object):
                     # first baby, half father half mother
                     self.babyChrom[0].v[s] = 0.5 * self.chrom[i].v[s] + 0.5*self.chrom[i+1].v[s]
                     # second baby, three quaters of fater and quater of mother
-                    self.babyChrom[1].v[s] = self.check(s, 1.5 * self.chrom[i].v[s] - 0.5*self.chrom[i+1].v[s])
+                    self.babyChrom[1].v[s] = self.check(s, 1.5 * self.chrom[i].v[s] - 0.5 * self.chrom[i+1].v[s])
                     # third baby, quater of fater and three quaters of mother
-                    self.babyChrom[2].v[s] = self.check(s, -0.5 * self.chrom[i].v[s] + 1.5*self.chrom[i+1].v[s])
+                    self.babyChrom[2].v[s] = self.check(s, -0.5 * self.chrom[i].v[s] + 1.5 * self.chrom[i+1].v[s])
                 # evaluate new baby
                 for j in range(3):
                     self.babyChrom[j].f = self.func(self.babyChrom[j].v)
@@ -141,8 +160,11 @@ cdef class Genetic(object):
     
     cdef double delta(self, double y)except *:
         cdef double r
-        r = self.gen / self.maxGen
-        return y*randV()*pow(1.0-r, self.bDelta)
+        if self.maxGen > 0:
+            r = self.gen / self.maxGen
+        else:
+            r = 1
+        return y*randV()*pow(1.0 - r, self.bDelta)
     
     cdef void fitness(self)except *:
         cdef int j
@@ -173,7 +195,7 @@ cdef class Genetic(object):
     
     cdef void report(self)except *:
         self.timeE = time()
-        self.fitnessTime += '%d,%.4f,%.2f;'%(self.gen, self.chromElite.f, self.timeE - self.timeS)
+        self.fitnessTime.append((self.gen, self.chromElite.f, self.timeE - self.timeS))
     
     cdef void select(self)except *:
         """
@@ -205,11 +227,8 @@ cdef class Genetic(object):
         else:
             if self.gen % 10 == 0:
                 self.report()
-        #progress
-        if self.progress_fun is not None:
-            self.progress_fun(self.gen, '%.4f'%self.chromElite.f)
     
-    cpdef run(self):
+    cpdef tuple run(self):
         """
         // **** Init and run GA for maxGen times
         // **** mxg : maximum generation
@@ -219,23 +238,26 @@ cdef class Genetic(object):
         self.initialPop()
         self.chrom[0].f = self.func(self.chrom[0].v)
         self.chromElite.assign(self.chrom[0])
-        self.gen = 0
         self.fitness()
         self.report()
-        if self.maxGen>0:
-            for self.gen in range(1, self.maxGen+1):
-                self.generation_process()
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
-        else:
-            while True:
-                self.generation_process()
-                self.gen += 1
-                #interrupt
-                if self.interrupt_fun is not None:
-                    if self.interrupt_fun():
-                        break
+        while True:
+            self.gen += 1
+            if self.option == maxGen:
+                if (self.maxGen > 0) and (self.gen > self.maxGen):
+                    break
+            elif self.option == minFit:
+                if self.chromElite.f <= self.minFit:
+                    break
+            elif self.option == maxTime:
+                if (self.maxTime > 0) and (time() - self.timeS >= self.maxTime):
+                    break
+            self.generation_process()
+            #progress
+            if self.progress_fun is not None:
+                self.progress_fun(self.gen, "{:.04f}".format(self.chromElite.f))
+            #interrupt
+            if self.interrupt_fun is not None:
+                if self.interrupt_fun():
+                    break
         self.report()
         return self.func.get_coordinates(self.chromElite.v), self.fitnessTime

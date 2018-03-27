@@ -1,23 +1,167 @@
 # -*- coding: utf-8 -*-
-##Pyslvs - Open Source Planar Linkage Mechanism Simulation and Dimensional Synthesis System.
-##Copyright (C) 2016-2018 Yuan Chang
-##E-mail: pyslvs@gmail.com
-##
-##This program is free software; you can redistribute it and/or modify
-##it under the terms of the GNU Affero General Public License as published by
-##the Free Software Foundation; either version 3 of the License, or
-##(at your option) any later version.
-##
-##This program is distributed in the hope that it will be useful,
-##but WITHOUT ANY WARRANTY; without even the implied warranty of
-##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##GNU Affero General Public License for more details.
-##
-##You should have received a copy of the GNU Affero General Public License
-##along with this program; if not, write to the Free Software
-##Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtChart import *
+"""This module contain all the Qt objects we needed."""
+
+__author__ = "Yuan Chang"
+__copyright__ = "Copyright (C) 2016-2018"
+__license__ = "AGPL"
+__email__ = "pyslvs@gmail.com"
+
+from PyQt5.QtCore import (
+    QCoreApplication,
+    QFileInfo,
+    QModelIndex,
+    QMutex,
+    QMutexLocker,
+    QObject,
+    QPoint,
+    QPointF,
+    QRectF,
+    QRegExp,
+    QSize,
+    QSizeF,
+    QStandardPaths,
+    QThread,
+    QTimer,
+    QUrl,
+    Qt,
+    pyqtSignal,
+    pyqtSlot,
+)
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QDial,
+    QDialog,
+    QDialogButtonBox,
+    QDoubleSpinBox,
+    QFileDialog,
+    QGraphicsScene,
+    QGraphicsView,
+    QInputDialog,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QProgressDialog,
+    QPushButton,
+    QSizePolicy,
+    QSpinBox,
+    QSplashScreen,
+    QTabWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QTableWidgetSelectionRange,
+    QTextEdit,
+    QUndoCommand,
+    QUndoStack,
+    QUndoView,
+    QVBoxLayout,
+    QWidget,
+)
+from PyQt5.QtGui import (
+    QBrush,
+    QColor,
+    QDesktopServices,
+    QFont,
+    QIcon,
+    QImage,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPixmap,
+    QSyntaxHighlighter,
+    QTextCharFormat,
+    QTextCursor,
+    QTextOption,
+)
+from PyQt5.QtChart import (
+    QCategoryAxis,
+    QChart,
+    QChartView,
+    QLineSeries,
+    QScatterSeries,
+    QValueAxis,
+)
+from PyQt5.QtCore import qVersion, PYQT_VERSION_STR
+
+__all__ = [
+    'PYQT_VERSION_STR',
+    'QAbstractItemView',
+    'QAction',
+    'QApplication',
+    'QBrush',
+    'QCategoryAxis',
+    'QChart',
+    'QChartView',
+    'QColor',
+    'QCoreApplication',
+    'QDesktopServices',
+    'QDial',
+    'QDialog',
+    'QDialogButtonBox',
+    'QDoubleSpinBox',
+    'QFileDialog',
+    'QFileInfo',
+    'QFont',
+    'QGraphicsScene',
+    'QGraphicsView',
+    'QIcon',
+    'QImage',
+    'QInputDialog',
+    'QLabel',
+    'QLineEdit',
+    'QLineSeries',
+    'QListWidget',
+    'QListWidgetItem',
+    'QMainWindow',
+    'QMenu',
+    'QMessageBox',
+    'QModelIndex',
+    'QMutex',
+    'QMutexLocker',
+    'QObject',
+    'QPainter',
+    'QPainterPath',
+    'QPen',
+    'QPixmap',
+    'QPoint',
+    'QPointF',
+    'QProgressDialog',
+    'QPushButton',
+    'QRectF',
+    'QRegExp',
+    'QScatterSeries',
+    'QSize',
+    'QSizeF',
+    'QSizePolicy',
+    'QSpinBox',
+    'QSplashScreen',
+    'QStandardPaths',
+    'QSyntaxHighlighter',
+    'QTabWidget',
+    'QTableWidget',
+    'QTableWidgetItem',
+    'QTableWidgetSelectionRange',
+    'QTextCharFormat',
+    'QTextCursor',
+    'QTextEdit',
+    'QTextOption',
+    'QThread',
+    'QTimer',
+    'QUndoCommand',
+    'QUndoStack',
+    'QUndoView',
+    'QUrl',
+    'QValueAxis',
+    'QVBoxLayout',
+    'QWidget',
+    'Qt',
+    'pyqtSignal',
+    'pyqtSlot',
+    'qVersion'
+]
