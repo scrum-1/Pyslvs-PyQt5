@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+"""Type synthesis."""
+
 # __author__ = "Yuan Chang"
 # __copyright__ = "Copyright (C) 2016-2018"
 # __license__ = "AGPL"
@@ -12,7 +14,7 @@ cimport numpy as np
 from time import time
 from cpython cimport bool
 
-cdef class Graph(object):
+cdef class Graph:
     
     """NetworkX-like graph class."""
     
@@ -36,7 +38,7 @@ cdef class Graph(object):
         cdef int n
         self.adj = {n: self.neighbors(n) for n in self.nodes}
     
-    cdef tuple neighbors(self, int n):
+    cdef inline tuple neighbors(self, int n):
         """Neighbors except the node."""
         cdef list neighbors = []
         cdef int l1, l2
@@ -91,7 +93,7 @@ cdef class Graph(object):
             return 1
         return 0
 
-cdef class GraphMatcher(object):
+cdef class GraphMatcher:
     
     """GraphMatcher and GMState class from NetworkX.
     Copyright (C) 2007-2009 by the NetworkX maintainers
@@ -126,7 +128,7 @@ cdef class GraphMatcher(object):
         self.initialize()
     
     #Reinitializes the state of the algorithm.
-    cdef void initialize(self):
+    cdef inline void initialize(self):
         # core_1[n] contains the index of the node paired with n, which is m,
         #           provided n is in the mapping.
         # core_2[m] contains the index of the node paired with m, which is n,
@@ -225,7 +227,7 @@ cdef class GraphMatcher(object):
                     newstate.restore()
     
     #Returns True if adding (G1_node, G2_node) is syntactically feasible.
-    cdef bool syntactic_feasibility(self, int G1_node, int G2_node):
+    cdef inline bool syntactic_feasibility(self, int G1_node, int G2_node):
         # The VF2 algorithm was designed to work with graphs having, at most,
         # one edge connecting any two nodes.  This is not the case when
         # dealing with an MultiGraphs.
@@ -298,7 +300,7 @@ cdef class GraphMatcher(object):
                 num2 += 1
         return num1 == num2
 
-cdef class GMState(object):
+cdef class GMState:
     
     cdef GraphMatcher GM
     cdef int G1_node, G2_node, depth
@@ -380,7 +382,7 @@ cdef class GMState(object):
                 if vector[node] == self.depth:
                     del vector[node]
 
-cdef bool verify(Graph G, list answer):
+cdef inline bool verify(Graph G, list answer):
     if not G.is_connected():
         #is not connected
         return True
@@ -390,7 +392,7 @@ cdef bool verify(Graph G, list answer):
             return True
     return False
 
-cdef list connection_get(int i, tuple connection):
+cdef inline list connection_get(int i, tuple connection):
     cdef tuple c
     return [c for c in connection if (i in c)]
 
@@ -433,6 +435,7 @@ cpdef topo(
     cdef Graph G, H
     cdef GraphMatcher GM_GH
     for link, count in enumerate(links):
+        #Other of joints that the link connect with.
         match = [Graph(m) for m in combinations(connection_get(link, connection), count)]
         if not edges_combinations:
             edges_combinations = match

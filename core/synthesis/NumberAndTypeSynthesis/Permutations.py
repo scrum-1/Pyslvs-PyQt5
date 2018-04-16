@@ -30,13 +30,14 @@ from core.QtModules import (
     QFileInfo,
 )
 from networkx import Graph
-from core.io import Qt_images, v_to_graph
+from core.io import Qt_images
 from core.libs import NumberSynthesis, topo
 from core.graphics import (
     graph,
     EngineList,
-    EngineError
+    EngineError,
 )
+from typing import List
 from .Ui_Permutations import Ui_Form
 
 class NumberAndTypeSynthesis(QWidget, Ui_Form):
@@ -53,8 +54,8 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         self.splitter.setStretchFactor(1, 15)
         self.answer = []
         self.save_edges_auto_label.setStatusTip(self.save_edges_auto.statusTip())
-        self.NL_input.valueChanged.connect(self.adjust_NJ_NL_dof)
-        self.NJ_input.valueChanged.connect(self.adjust_NJ_NL_dof)
+        self.NL_input.valueChanged.connect(self.__adjustStructureData)
+        self.NJ_input.valueChanged.connect(self.__adjustStructureData)
         self.graph_engine.addItems(EngineList)
         self.graph_engine.setCurrentIndex(2)
         self.graph_link_as_node.clicked.connect(self.on_reload_atlas_clicked)
@@ -62,7 +63,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
             self.on_reload_atlas_clicked
         )
         self.Topologic_result.customContextMenuRequested.connect(
-            self.Topologic_result_context_menu
+            self.__topologicResultContextMenu
         )
         """Context menu
         
@@ -85,6 +86,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         ])
         self.jointDataFunc = parent.Entities_Point.data
         self.linkDataFunc = parent.Entities_Link.data
+        self.getGraph = parent.getGraph
         self.clear()
     
     def clear(self):
@@ -106,7 +108,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         jointData = self.jointDataFunc()
         linkData = self.linkDataFunc()
         if jointData and linkData:
-            self.Expression_edges.setText(str(v_to_graph(jointData, linkData)))
+            self.Expression_edges.setText(str(self.getGraph()))
         else:
             self.Expression_edges.setText("")
         keep_dof_checked = self.keep_dof.isChecked()
@@ -124,7 +126,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         ))
         self.keep_dof.setChecked(keep_dof_checked)
     
-    def adjust_NJ_NL_dof(self):
+    def __adjustStructureData(self):
         """Update NJ and NL values.
         
         If user don't want to keep the DOF:
@@ -205,7 +207,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
             row = self.Expression_number.currentRow()
         if self.Expression_number.currentItem() is None:
             return
-        answer = self.combineType(row)
+        answer = self.__typeCombine(row)
         if answer:
             self.answer = answer
             self.on_reload_atlas_clicked()
@@ -224,7 +226,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         answers = []
         break_point = False
         for row in range(self.Expression_number.count()):
-            answer = self.combineType(row)
+            answer = self.__typeCombine(row)
             if answer:
                 answers += answer
             else:
@@ -242,7 +244,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         self.answer = answers
         self.on_reload_atlas_clicked()
     
-    def combineType(self, row: int):
+    def __typeCombine(self, row: int) -> List[Graph]:
         """Combine and show progress dialog."""
         item = self.Expression_number.item(row)
         progdlg = QProgressDialog(
@@ -252,19 +254,24 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
             100,
             self
         )
+        progdlg.setAttribute(Qt.WA_DeleteOnClose, True)
         progdlg.setWindowTitle("Type synthesis - ({})".format(item.text()))
         progdlg.setMinimumSize(QSize(500, 120))
         progdlg.setModal(True)
         progdlg.show()
-        #Call in every loop.
+        
         def stopFunc():
+            """If stop by GUI."""
             QCoreApplication.processEvents()
             progdlg.setValue(progdlg.value() + 1)
             return progdlg.wasCanceled()
-        def setjobFunc(job, maximum):
+        
+        def setjobFunc(job: str, maximum: float):
+            """New job."""
             progdlg.setLabelText(job)
             progdlg.setValue(0)
             progdlg.setMaximum(maximum+1)
+        
         answer, time = topo(
             item.links,
             not self.graph_degenerate.isChecked(),
@@ -293,6 +300,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
                 len(self.answer),
                 self
             )
+            progdlg.setAttribute(Qt.WA_DeleteOnClose, True)
             progdlg.setWindowTitle("Type synthesis")
             progdlg.resize(400, progdlg.height())
             progdlg.setModal(True)
@@ -301,13 +309,13 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
                 QCoreApplication.processEvents()
                 if progdlg.wasCanceled():
                     return
-                if self.drawAtlas(i, G):
+                if self.__drawAtlas(i, G):
                     progdlg.setValue(i+1)
                 else:
                     break
             progdlg.setValue(progdlg.maximum())
     
-    def drawAtlas(self, i: int, G: Graph) -> bool:
+    def __drawAtlas(self, i: int, G: Graph) -> bool:
         """Draw atlas and return True if done."""
         item = QListWidgetItem("No. {}".format(i + 1))
         try:
@@ -328,7 +336,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
             self.Topologic_result.addItem(item)
             return True
     
-    def atlas_image(self, row: int =None) -> QImage:
+    def __atlasImage(self, row: int =None) -> QImage:
         """Capture a result item icon to image."""
         w = self.Topologic_result
         if row is None:
@@ -338,7 +346,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
         return item.icon().pixmap(w.iconSize()).toImage()
     
     @pyqtSlot(QPoint)
-    def Topologic_result_context_menu(self, point):
+    def __topologicResultContextMenu(self, point):
         """Context menu for the type synthesis results."""
         index = self.Topologic_result.currentIndex().row()
         self.add_collection.setEnabled(index>-1)
@@ -354,7 +362,7 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
             clipboard.setText(str(self.answer[index].edges))
         elif action==self.copy_image:
             #Turn the transparent background to white.
-            image1 = self.atlas_image()
+            image1 = self.__atlasImage()
             image2 = QImage(image1.size(), image1.format())
             image2.fill(QColor(Qt.white).rgb())
             painter = QPainter(image2)
@@ -429,12 +437,12 @@ class NumberAndTypeSynthesis(QWidget, Ui_Form):
                 lateral * width if count>lateral else count * width,
                 ((count // lateral) + bool(count % lateral)) * width
             ),
-            self.atlas_image(0).format()
+            self.__atlasImage(0).format()
         )
         image_main.fill(QColor(Qt.white).rgb())
         painter = QPainter(image_main)
         for row in range(count):
-            image = self.atlas_image(row)
+            image = self.__atlasImage(row)
             painter.drawImage(QPointF(
                 row % lateral * width,
                 row // lateral * width

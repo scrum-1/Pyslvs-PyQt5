@@ -11,10 +11,24 @@ from .pyslvs_algorithm import (
     Genetic,
     Firefly,
     DiffertialEvolution,
+    Coordinate,
+    PLAP,
+    PLLP,
+    PLPP,
     expr_parser,
-    build_planar
+    expr_solving,
+    expr_path,
+    VPoint,
+    VLink,
+    build_planar,
 )
-from .pyslvs_topologic import NumberSynthesis, topo
+from .pyslvs_topologic import (
+    NumberSynthesis,
+    topo,
+    Graph,
+    graph_configure,
+    vpoints_configure,
+)
 #Solvespace API.
 from .python_solvespace.slvs import (
     System,
@@ -36,10 +50,21 @@ __all__ = [
     'Genetic',
     'Firefly',
     'DiffertialEvolution',
+    'Coordinate',
+    'PLAP',
+    'PLLP',
+    'PLPP',
     'expr_parser',
+    'expr_solving',
+    'expr_path',
+    'VPoint',
+    'VLink',
     'build_planar',
     'NumberSynthesis',
     'topo',
+    'Graph',
+    'graph_configure',
+    'vpoints_configure',
     'System',
     'groupNum',
     'Slvs_MakeQuaternion',

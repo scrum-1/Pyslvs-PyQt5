@@ -26,12 +26,7 @@ from .larkParser import (
     triangle_expr,
     triangle_class,
     get_from_parenthesis,
-    get_front_of_parenthesis
-)
-from .elements import (
-    VPoint,
-    VLink,
-    v_to_graph
+    get_front_of_parenthesis,
 )
 from .peeweeIO import FileWidget
 
@@ -60,8 +55,5 @@ __all__ = [
     'triangle_class',
     'get_from_parenthesis',
     'get_front_of_parenthesis',
-    'VPoint',
-    'VLink',
-    'v_to_graph',
     'FileWidget'
 ]

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+"""Differential Evolution."""
+
 # __author__ = "Yuan Chang"
 # __copyright__ = "Copyright (C) 2016-2018"
 # __license__ = "AGPL"
@@ -23,7 +25,7 @@ cdef enum limit:
     minFit,
     maxTime
 
-cdef class Chromosome(object):
+cdef class Chromosome:
     
     cdef public int n
     cdef public double f
@@ -42,7 +44,7 @@ cdef class Chromosome(object):
         self.v[:] = obj.v
         self.f = obj.f
 
-cdef class DiffertialEvolution(object):
+cdef class DiffertialEvolution:
     
     cdef limit option
     cdef int strategy, D, NP, maxGen, maxTime, rpt, gen, r1, r2, r3, r4, r5
@@ -125,7 +127,7 @@ cdef class DiffertialEvolution(object):
         self.timeE = 0
         self.fitnessTime = []
     
-    cdef void checkParameter(self):
+    cdef inline void checkParameter(self):
         """
         check parameter is set properly
         """
@@ -141,7 +143,7 @@ cdef class DiffertialEvolution(object):
             if lower > upper:
                 raise Exception('upper bound should be larger than lower bound')
     
-    cdef void init(self):
+    cdef inline void init(self):
         """
         init population
         """
@@ -151,13 +153,13 @@ cdef class DiffertialEvolution(object):
                 self.pop[i].v[j] = self.lb[j] + randV()*(self.ub[j] - self.lb[j])
             self.pop[i].f = self.evalute(self.pop[i])
     
-    cdef double evalute(self, Chromosome member):
+    cdef inline double evalute(self, Chromosome member):
         """
         evalute the member in enviorment
         """
         return self.func(member.v)
     
-    cdef Chromosome findBest(self):
+    cdef inline Chromosome findBest(self):
         """
         find member that have minimum fitness value from pool
         """
@@ -172,7 +174,7 @@ cdef class DiffertialEvolution(object):
                 f = chrom.f
         return self.pop[index]
     
-    cdef void generateRandomVector(self, int i):
+    cdef inline void generateRandomVector(self, int i):
         """
         generate new vector
         """
@@ -197,7 +199,7 @@ cdef class DiffertialEvolution(object):
             if (self.r5 != i) and (self.r5 != self.r1) and (self.r5 != self.r2) and (self.r5 != self.r3) and (self.r5 != self.r4):
                 break
     
-    cdef Chromosome recombination(self, int i):
+    cdef inline Chromosome recombination(self, int i):
         """
         use new vector, recombination the new one member to tmp
         """
@@ -267,14 +269,14 @@ cdef class DiffertialEvolution(object):
                 n = (n + 1) % self.D
         return tmp
     
-    cdef void report(self):
+    cdef inline void report(self):
         """
         report current generation status
         """
         self.timeE = time()
         self.fitnessTime.append((self.gen, self.lastgenbest.f, self.timeE - self.timeS))
     
-    cdef bool overbound(self, Chromosome member):
+    cdef inline bool overbound(self, Chromosome member):
         """
         check the member's chromosome that is out of bound?
         """
@@ -284,7 +286,7 @@ cdef class DiffertialEvolution(object):
                 return True
         return False
     
-    cdef void generation_process(self):
+    cdef inline void generation_process(self):
         cdef int i
         cdef Chromosome tmp
         for i in range(self.NP):

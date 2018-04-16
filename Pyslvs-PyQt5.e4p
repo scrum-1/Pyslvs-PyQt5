@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-5.1.dtd">
 <!-- eric project file for project Pyslvs-PyQt5 -->
-<!-- Saved: 2018-03-17, 15:06:21 -->
+<!-- Saved: 2018-04-16, 11:05:18 -->
 <!-- Copyright (C) 2018 KmolYuan, pyslvs@gmail.com -->
 <Project version="5.1">
   <Language></Language>
@@ -35,9 +35,9 @@
     <Source>core/io/Ui_dxfType.py</Source>
     <Source>core/io/Ui_peeweeIO.py</Source>
     <Source>core/io/Ui_script.py</Source>
+    <Source>core/io/Ui_workbook_overview.py</Source>
     <Source>core/io/__init__.py</Source>
     <Source>core/io/dxfIO.py</Source>
-    <Source>core/io/elements.py</Source>
     <Source>core/io/example.py</Source>
     <Source>core/io/images.py</Source>
     <Source>core/io/larkParser.py</Source>
@@ -46,6 +46,7 @@
     <Source>core/io/scriptIO.py</Source>
     <Source>core/io/slvsIO.py</Source>
     <Source>core/io/undoRedo.py</Source>
+    <Source>core/io/workbook_overview.py</Source>
     <Source>core/libs/__init__.py</Source>
     <Source>core/libs/pyslvs_algorithm/__init__.py</Source>
     <Source>core/libs/pyslvs_algorithm/de.pyx</Source>
@@ -58,6 +59,7 @@
     <Source>core/libs/pyslvs_topologic/number.pyx</Source>
     <Source>core/libs/pyslvs_topologic/setup.py</Source>
     <Source>core/libs/pyslvs_topologic/topologic.pyx</Source>
+    <Source>core/libs/pyslvs_topologic/triangulation.pyx</Source>
     <Source>core/libs/python_solvespace/__init__.py</Source>
     <Source>core/main.py</Source>
     <Source>core/synthesis/Collections/Structure.py</Source>
@@ -101,10 +103,11 @@
     <Source>core/widgets/inputs.py</Source>
     <Source>core/widgets/main_canvas.py</Source>
     <Source>core/widgets/rotatable.py</Source>
-    <Source>core/widgets/table.py</Source>
+    <Source>core/widgets/tables.py</Source>
     <Source>icons_rc.py</Source>
     <Source>launch_pyslvs.py</Source>
     <Source>preview_rc.py</Source>
+    <Source>test_pyslvs.py</Source>
   </Sources>
   <Forms>
     <Form>core/entities/edit_link.ui</Form>
@@ -113,6 +116,7 @@
     <Form>core/io/dxfType.ui</Form>
     <Form>core/io/peeweeIO.ui</Form>
     <Form>core/io/script.ui</Form>
+    <Form>core/io/workbook_overview.ui</Form>
     <Form>core/main.ui</Form>
     <Form>core/synthesis/Collections/Structure.ui</Form>
     <Form>core/synthesis/Collections/TriangularIteration.ui</Form>
@@ -134,6 +138,7 @@
     <Resource>preview.qrc</Resource>
   </Resources>
   <Others>
+    <Other>.travis.yml</Other>
     <Other>Makefile</Other>
     <Other>README.md</Other>
     <Other>appimage_recipe.sh</Other>
@@ -263,4 +268,53 @@
     <FiletypeAssociation pattern="README" type="OTHERS"/>
     <FiletypeAssociation pattern="README.*" type="OTHERS"/>
   </FiletypeAssociations>
+  <Documentation>
+    <DocumentationParams>
+      <dict>
+        <key>
+          <string>ERIC4DOC</string>
+        </key>
+        <value>
+          <dict>
+            <key>
+              <string>noempty</string>
+            </key>
+            <value>
+              <bool>True</bool>
+            </value>
+            <key>
+              <string>noindex</string>
+            </key>
+            <value>
+              <bool>True</bool>
+            </value>
+            <key>
+              <string>outputDirectory</string>
+            </key>
+            <value>
+              <string>doc</string>
+            </value>
+            <key>
+              <string>qtHelpEnabled</string>
+            </key>
+            <value>
+              <bool>False</bool>
+            </value>
+            <key>
+              <string>qtHelpOutputDirectory</string>
+            </key>
+            <value>
+              <string>doc</string>
+            </value>
+            <key>
+              <string>useRecursion</string>
+            </key>
+            <value>
+              <bool>True</bool>
+            </value>
+          </dict>
+        </value>
+      </dict>
+    </DocumentationParams>
+  </Documentation>
 </Project>

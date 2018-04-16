@@ -25,10 +25,11 @@ from core.synthesis import (
     DimensionalSynthesis
 )
 from .main_canvas import DynamicCanvas
-from .table import (
+from .tables import (
     PointTableWidget,
     LinkTableWidget,
-    SelectionLabel
+    ExprTableWidget,
+    SelectionLabel,
 )
 from .inputs import InputsWidget
 
@@ -66,6 +67,7 @@ def appearance(self):
     """Start up and initialize custom widgets."""
     #Version label
     self.version_label.setText("v{}.{}.{} ({})".format(*VERSION))
+    
     #Entities tables.
     self.Entities_Point = PointTableWidget(self.Entities_Point_Widget)
     self.Entities_Point.cellDoubleClicked.connect(
@@ -83,19 +85,23 @@ def appearance(self):
         self.on_action_Delete_Link_triggered
     )
     self.Entities_Link_Layout.addWidget(self.Entities_Link)
+    self.Entities_Expr = ExprTableWidget(self.Expression_Widget)
+    self.Expression_Layout.addWidget(self.Entities_Expr)
+    
     #Selection label on status bar right side.
     selectionLabel = SelectionLabel(self)
     self.Entities_Point.selectionLabelUpdate.connect(
         selectionLabel.updateSelectPoint
     )
     self.statusBar.addPermanentWidget(selectionLabel)
+    
     #QPainter canvas window
     self.DynamicCanvasView = DynamicCanvas(self)
     self.DynamicCanvasView.mouse_getSelection.connect(
         self.Entities_Point.setSelections
     )
     self.DynamicCanvasView.mouse_freemoveSelection.connect(
-        self.freemove_setCoordinate
+        self.setFreemoved
     )
     self.DynamicCanvasView.mouse_noSelection.connect(
         self.Entities_Point.clearSelection
@@ -105,17 +111,18 @@ def appearance(self):
     CleanSelectionAction.setShortcut("Esc")
     CleanSelectionAction.setShortcutContext(Qt.WindowShortcut)
     self.addAction(CleanSelectionAction)
-    self.DynamicCanvasView.mouse_getAltAdd.connect(self.qAddPointGroup)
+    self.DynamicCanvasView.mouse_getAltAdd.connect(self.qAddNormalPoint)
     self.DynamicCanvasView.mouse_getDoubleClickEdit.connect(
         self.on_action_Edit_Point_triggered
     )
     self.DynamicCanvasView.zoom_change.connect(self.ZoomBar.setValue)
-    self.DynamicCanvasView.mouse_track.connect(self.context_menu_mouse_pos)
+    self.DynamicCanvasView.mouse_track.connect(self.setMousePos)
     self.DynamicCanvasView.mouse_browse_track.connect(
         selectionLabel.updateMousePosition
     )
     self.canvasSplitter.insertWidget(0, self.DynamicCanvasView)
     self.canvasSplitter.setSizes([600, 10, 30])
+    
     #Menu of free move mode.
     FreeMoveMode_menu = QMenu(self)
     def freeMoveMode_func(j, qicon):
@@ -123,7 +130,7 @@ def appearance(self):
         def func():
             self.FreeMoveMode.setIcon(qicon)
             self.DynamicCanvasView.setFreeMove(j)
-            self.inputs_variable_stop.click()
+            self.InputsWidget.variable_stop.click()
         return func
     for i, (text, icon) in enumerate([
         ("View mode", "freemove_off"),
@@ -141,6 +148,7 @@ def appearance(self):
         action.setShortcutContext(Qt.WindowShortcut)
         FreeMoveMode_menu.addAction(action)
     self.FreeMoveMode.setMenu(FreeMoveMode_menu)
+    
     #File table settings.
     self.FileWidget = FileWidget(self)
     self.SCMLayout.addWidget(self.FileWidget)
@@ -149,23 +157,26 @@ def appearance(self):
         self.on_action_Save_branch_triggered
     )
     self.action_Stash.triggered.connect(self.FileWidget.on_commit_stash_clicked)
+    
     #Inputs widget.
     self.InputsWidget = InputsWidget(self)
     self.inputs_tab_layout.addWidget(self.InputsWidget)
     self.FreeMoveMode.toggled.connect(self.InputsWidget.variableValueReset)
     self.DynamicCanvasView.mouse_getSelection.connect(
-        self.InputsWidget.inputs_points_setSelection
+        self.InputsWidget.setSelection
     )
     self.DynamicCanvasView.mouse_noSelection.connect(
-        self.InputsWidget.inputs_points_clearSelection
+        self.InputsWidget.clearSelection
     )
+    
     #Number and type synthesis.
     self.NumberAndTypeSynthesis = NumberAndTypeSynthesis(self)
     self.SynthesisTab.addTab(
         self.NumberAndTypeSynthesis,
         self.NumberAndTypeSynthesis.windowIcon(),
-        "Structure"
+        "Structural"
     )
+    
     #Synthesis collections
     self.CollectionTabPage = Collections(self)
     self.SynthesisTab.addTab(
@@ -184,7 +195,7 @@ def appearance(self):
     ) #Call to get triangle data.
     self.FileWidget.InputsDataFunc = (lambda: tuple(
         variable[:-1]
-        for variable in self.InputsWidget.get_inputs_variables()
+        for variable in self.InputsWidget.getInputsVariables()
     )) #Call to get inputs variables data.
     self.FileWidget.loadCollectFunc = (
         self.CollectionTabPage.CollectionsStructure.addCollections
@@ -193,7 +204,7 @@ def appearance(self):
         self.CollectionTabPage.CollectionsTriangularIteration.addCollections
     ) #Call to load triangle data.
     self.FileWidget.loadInputsFunc = (
-        self.InputsWidget.add_inputs_variables
+        self.InputsWidget.addInputsVariables
     ) #Call to load inputs variables data.
     self.FileWidget.loadPathFunc = (
         self.InputsWidget.loadPaths
@@ -201,17 +212,16 @@ def appearance(self):
     self.FileWidget.pathDataFunc = (
         lambda: self.InputsWidget.pathData
     ) #Call to get path data.
+    
     #Dimensional synthesis
     self.DimensionalSynthesis = DimensionalSynthesis(self)
     self.DimensionalSynthesis.fixPointRange.connect(
-        self.DynamicCanvasView.update_ranges
+        self.DynamicCanvasView.updateRanges
     )
     self.DimensionalSynthesis.pathChanged.connect(
         self.DynamicCanvasView.setSolvingPath
     )
-    self.DimensionalSynthesis.mergeResult.connect(
-        self.dimensional_synthesis_mergeResult
-    )
+    self.DimensionalSynthesis.mergeResult.connect(self.mergeResult)
     self.FileWidget.AlgorithmDataFunc = (
         lambda: self.DimensionalSynthesis.mechanism_data
     ) #Call to get algorithm data.
@@ -223,11 +233,14 @@ def appearance(self):
         self.DimensionalSynthesis.windowIcon(),
         "Dimensional"
     )
+    
     #Console dock will hide when startup.
     self.ConsoleWidget.hide()
+    
     #Connect to GUI button switching.
     self.disconnectConsoleButton.setEnabled(not self.args.debug_mode)
     self.connectConsoleButton.setEnabled(self.args.debug_mode)
+    
     #Select all button on the Point and Link tab as corner widget.
     SelectAllButton = QPushButton()
     SelectAllButton.setIcon(QIcon(QPixmap(":/icons/select_all.png")))
@@ -240,6 +253,7 @@ def appearance(self):
     SelectAllAction.setShortcut("Ctrl+A")
     SelectAllAction.setShortcutContext(Qt.WindowShortcut)
     self.addAction(SelectAllAction)
+    
     #While value change, update the canvas widget.
     self.Entities_Point.rowSelectionChanged.connect(
         self.DynamicCanvasView.changePointsSelection
@@ -263,18 +277,22 @@ def appearance(self):
     self.MarginFactor.valueChanged.connect(
         self.DynamicCanvasView.setMarginFactor
     )
+    
     #Splitter stretch factor.
     self.MainSplitter.setStretchFactor(0, 4)
     self.MainSplitter.setStretchFactor(1, 15)
     self.MechanismPanelSplitter.setSizes([500, 200])
     self.synthesis_splitter.setSizes([100, 500])
+    
     #Enable mechanism menu actions when shows.
-    self.menu_Mechanism.aboutToShow.connect(self.enableMenu)
-    #zoom_to_fit function connections.
+    self.menu_Mechanism.aboutToShow.connect(self.enableMechanismActions)
+    
+    #'zoom to fit' function connections.
     self.action_Zoom_to_fit.triggered.connect(
-        self.DynamicCanvasView.zoom_to_fit
+        self.DynamicCanvasView.zoomToFit
     )
-    self.ResetCanvas.clicked.connect(self.DynamicCanvasView.zoom_to_fit)
+    self.ResetCanvas.clicked.connect(self.DynamicCanvasView.zoomToFit)
+    
     #Zoom text button
     Zoom_menu = QMenu(self)
     
@@ -293,7 +311,7 @@ def appearance(self):
         action.triggered.connect(zoom_level(level))
         Zoom_menu.addAction(action)
     action = QAction("customize", self)
-    action.triggered.connect(self.zoom_customize)
+    action.triggered.connect(self.customizeZoom)
     Zoom_menu.addAction(action)
     self.ZoomText.setMenu(Zoom_menu)
 
@@ -337,7 +355,7 @@ def context_menu(self):
     self.popMenu_point_merge.setTitle("Multiple joint")
     self.popMenu_point.addMenu(self.popMenu_point_merge)
     self.action_point_context_copydata = QAction("&Copy table data", self)
-    self.action_point_context_copydata.triggered.connect(self.tableCopy_Points)
+    self.action_point_context_copydata.triggered.connect(self.copyPointsTable)
     self.popMenu_point.addAction(self.action_point_context_copydata)
     self.action_point_context_copyPoint = QAction("C&lone", self)
     self.action_point_context_copyPoint.triggered.connect(self.clonePoint)
@@ -373,7 +391,7 @@ def context_menu(self):
     )
     self.popMenu_link.addAction(self.action_link_context_edit)
     self.action_link_context_copydata = QAction("&Copy table data", self)
-    self.action_link_context_copydata.triggered.connect(self.tableCopy_Links)
+    self.action_link_context_copydata.triggered.connect(self.copyLinksTable)
     self.popMenu_link.addAction(self.action_link_context_copydata)
     self.action_link_context_release = QAction("&Release", self)
     self.action_link_context_release.triggered.connect(self.releaseGround)
@@ -410,18 +428,18 @@ def context_menu(self):
     self.popMenu_canvas = QMenu(self)
     self.popMenu_canvas.setSeparatorsCollapsible(True)
     self.action_canvas_context_add = QAction("&Add", self)
-    self.action_canvas_context_add.triggered.connect(self.addPointGroup)
+    self.action_canvas_context_add.triggered.connect(self.addNormalPoint)
     self.popMenu_canvas.addAction(self.action_canvas_context_add)
     #New Link
     self.popMenu_canvas.addAction(self.action_New_Link)
     self.action_canvas_context_fix_add = QAction("Add [fixed]", self)
     self.action_canvas_context_fix_add.triggered.connect(
-        self.addPointGroup_fixed
+        self.addFixedPoint
     )
     self.popMenu_canvas.addAction(self.action_canvas_context_fix_add)
     self.action_canvas_context_path = QAction("Add [target path]", self)
     self.action_canvas_context_path.triggered.connect(
-        self.dimensional_synthesis_add_rightClick
+        self.addTargetPoint
     )
     self.popMenu_canvas.addAction(self.action_canvas_context_path)
     #The following actions will be shown when points selected.

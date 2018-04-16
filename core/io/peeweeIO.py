@@ -20,11 +20,7 @@ from core.QtModules import (
     QMessageBox,
     QTableWidgetItem,
 )
-from .Ui_peeweeIO import Ui_Form
-from .example import example_list
 import zlib
-compress = lambda obj: zlib.compress(bytes(repr(obj), encoding="utf8"), 5)
-decompress = lambda obj: eval(zlib.decompress(obj).decode())
 import os
 import datetime
 from peewee import (
@@ -35,6 +31,15 @@ from peewee import (
     ForeignKeyField,
     DateTimeField
 )
+from .workbook_overview import WorkbookOverview
+from .Ui_peeweeIO import Ui_Form
+from .example import example_list
+
+"""Use to encode the Python script."""
+compress = lambda obj: zlib.compress(bytes(repr(obj), encoding="utf8"), 5)
+decompress = lambda obj: eval(zlib.decompress(obj).decode())
+
+"""We need a not-a-number symbol for eval function."""
 nan = float('nan')
 
 """Create a empty Sqlite database object."""
@@ -166,7 +171,7 @@ class FileWidget(QWidget, Ui_Form):
         + Call after loaded paths.
         """
         self.isSavedFunc = parent.workbookSaved
-        self.linkGroupFunc = parent.emptyLinkGroup
+        self.linkGroupFunc = parent.AddEmptyLinkGroup
         self.parseFunc = parent.parseExpression
         self.clearFunc = parent.clear
         self.loadStorageFunc = parent.loadStorage
@@ -185,7 +190,7 @@ class FileWidget(QWidget, Ui_Form):
         self.loadPathFunc #Call after loaded paths.
         """
         #Close database when destroyed.
-        self.destroyed.connect(self.colseDatabase)
+        self.destroyed.connect(self.closeDatabase)
         #Undo Stack
         self.CommandStack = parent.CommandStack
         #Reset
@@ -211,15 +216,15 @@ class FileWidget(QWidget, Ui_Form):
         self.commit_search_text.clear()
         self.commit_current_id.setValue(0)
     
-    def connectDatabase(self, fileName: str):
+    def __connectDatabase(self, fileName: str):
         """Connect database."""
-        self.colseDatabase()
+        self.closeDatabase()
         db.init(fileName)
         db.connect()
         db.create_tables([CommitModel, UserModel, BranchModel], safe=True)
     
     @pyqtSlot()
-    def colseDatabase(self):
+    def closeDatabase(self):
         if not db.deferred:
             db.close()
     
@@ -263,7 +268,7 @@ class FileWidget(QWidget, Ui_Form):
         ):
             os.remove(fileName)
             print("The original file has been overwritten.")
-        self.connectDatabase(fileName)
+        self.__connectDatabase(fileName)
         isError = False
         with db.atomic():
             if author_name in (user.name for user in UserModel.select()):
@@ -343,7 +348,7 @@ class FileWidget(QWidget, Ui_Form):
     
     def read(self, fileName: str):
         """Load database commit."""
-        self.connectDatabase(fileName)
+        self.__connectDatabase(fileName)
         history_commit = CommitModel.select().order_by(CommitModel.id)
         commit_count = len(history_commit)
         if not commit_count:
@@ -356,21 +361,21 @@ class FileWidget(QWidget, Ui_Form):
         self.reset()
         self.history_commit = history_commit
         for commit in self.history_commit:
-            self.addCommit(commit)
+            self.__addCommit(commit)
         print("{} commit(s) was find in database.".format(commit_count))
-        self.loadCommit(self.history_commit.order_by(-CommitModel.id).get())
+        self.__loadCommit(self.history_commit.order_by(-CommitModel.id).get())
         self.fileName = QFileInfo(fileName)
         self.isSavedFunc()
     
     def importMechanism(self, fileName: str):
         """Pick and import the latest mechanism from a branch."""
-        self.connectDatabase(fileName)
+        self.__connectDatabase(fileName)
         commit_all = CommitModel.select().join(BranchModel)
         branch_all = BranchModel.select().order_by(BranchModel.name)
-        if self.history_commit!=None:
-            self.connectDatabase(self.fileName.absoluteFilePath())
+        if self.history_commit != None:
+            self.__connectDatabase(self.fileName.absoluteFilePath())
         else:
-            self.colseDatabase()
+            self.closeDatabase()
         branch_name, ok = QInputDialog.getItem(self,
             "Branch",
             "Select the latest commit in the branch to load.",
@@ -393,9 +398,9 @@ class FileWidget(QWidget, Ui_Form):
                 "This file is a non-committed database."
             )
         else:
-            self.importCommit(commit)
+            self.__importCommit(commit)
     
-    def addCommit(self, commit: CommitModel):
+    def __addCommit(self, commit: CommitModel):
         """Add commit data to all widgets.
         
         + Commit ID
@@ -411,7 +416,7 @@ class FileWidget(QWidget, Ui_Form):
         
         self.commit_current_id.setValue(commit.id)
         button = LoadCommitButton(commit.id, self)
-        button.loaded.connect(self.loadCommitID)
+        button.loaded.connect(self.__loadCommitID)
         self.load_id.connect(button.isLoaded)
         self.CommitTable.setCellWidget(row, 0, button)
         
@@ -455,7 +460,7 @@ class FileWidget(QWidget, Ui_Form):
             item.setToolTip(text)
             self.CommitTable.setItem(row, i+1, item)
     
-    def loadCommitID(self, id: int):
+    def __loadCommitID(self, id: int):
         """Check the id is correct."""
         try:
             commit = self.history_commit.where(CommitModel.id==id).get()
@@ -464,11 +469,11 @@ class FileWidget(QWidget, Ui_Form):
         except AttributeError:
             QMessageBox.warning(self, "Warning", "Nothing submitted.")
         else:
-            self.loadCommit(commit)
+            self.__loadCommit(commit)
     
-    def loadCommit(self, commit: CommitModel):
+    def __loadCommit(self, commit: CommitModel):
         """Load the commit pointer."""
-        if not self.checkSaved():
+        if not self.__checkSaved():
             return
         #Reset the main window status.
         self.clearFunc()
@@ -495,8 +500,12 @@ class FileWidget(QWidget, Ui_Form):
         #Workbook loaded.
         self.isSavedFunc()
         print("The specified phase has been loaded.")
+        #Show overview dialog.
+        dlg = WorkbookOverview(self, commit, decompress)
+        dlg.show()
+        dlg.exec_()
     
-    def importCommit(self, commit: CommitModel):
+    def __importCommit(self, commit: CommitModel):
         """Just load the expression. (No clear step!)"""
         self.parseFunc(decompress(commit.mechanism))
         print("The specified phase has been merged.")
@@ -504,11 +513,11 @@ class FileWidget(QWidget, Ui_Form):
     @pyqtSlot()
     def on_commit_stash_clicked(self):
         """Reload the least commit ID."""
-        self.loadCommitID(self.commit_current_id.value())
+        self.__loadCommitID(self.commit_current_id.value())
     
     def loadExample(self, isImport=False) -> bool:
         """Load example to new workbook."""
-        if not self.checkSaved():
+        if not self.__checkSaved():
             return False
         #load example by expression.
         example_name, ok = QInputDialog.getItem(self,
@@ -529,17 +538,15 @@ class FileWidget(QWidget, Ui_Form):
         print("Example \"{}\" has been loaded.".format(example_name))
         return True
     
-    def checkSaved(self) -> bool:
+    def __checkSaved(self) -> bool:
         """Check and warn if user is not saved yet."""
         if not self.changed:
             return True
         reply = QMessageBox.question(self,
             "Message",
-            "Are you sure to load?\nAny changes won't be saved.",
-            (QMessageBox.Ok | QMessageBox.Cancel),
-            QMessageBox.Ok
+            "Are you sure to load?\nAny changes won't be saved."
         )
-        return reply == QMessageBox.Ok
+        return reply == QMessageBox.Yes
     
     @pyqtSlot(str)
     def on_commit_search_text_textEdited(self, text: str):
@@ -565,15 +572,16 @@ class FileWidget(QWidget, Ui_Form):
         if not self.BranchList.currentRow() > -1:
             return
         branch_name = self.BranchList.currentItem().text()
-        if branch_name != self.branch_current.text():
-            leastCommit = (
-                self.history_commit
-                .join(BranchModel)
-                .where(BranchModel.name == branch_name)
-                .order_by(-CommitModel.date)
-                .get()
-            )
-            self.loadCommit(leastCommit)
+        if branch_name == self.branch_current.text():
+            return
+        leastCommit = (
+            self.history_commit
+            .join(BranchModel)
+            .where(BranchModel.name == branch_name)
+            .order_by(-CommitModel.date)
+            .get()
+        )
+        self.__loadCommit(leastCommit)
     
     @pyqtSlot()
     def on_branch_delete_clicked(self):
@@ -581,33 +589,33 @@ class FileWidget(QWidget, Ui_Form):
         if not self.BranchList.currentRow() > -1:
             return
         branch_name = self.BranchList.currentItem().text()
-        if branch_name != self.branch_current.text():
-            fileName = self.fileName.absoluteFilePath()
-            #Connect on database to remove all the commit in this branch.
-            with db.atomic():
-                branch_quary = (
-                    BranchModel
-                    .select()
-                    .where(BranchModel.name == branch_name)
-                )
-                (
-                    CommitModel
-                    .delete()
-                    .where(CommitModel.branch.in_(branch_quary))
-                    .execute()
-                )
-                (
-                    BranchModel
-                    .delete()
-                    .where(BranchModel.name == branch_name)
-                    .execute()
-                )
-            db.close()
-            print("Branch {} was deleted.".format(branch_name))
-            #Reload database.
-            self.read(fileName)
-        else:
+        if branch_name == self.branch_current.text():
             QMessageBox.warning(self,
                 "Warning",
                 "Cannot delete current branch."
             )
+            return
+        fileName = self.fileName.absoluteFilePath()
+        #Connect on database to remove all the commit in this branch.
+        with db.atomic():
+            branch_quary = (
+                BranchModel
+                .select()
+                .where(BranchModel.name == branch_name)
+            )
+            (
+                CommitModel
+                .delete()
+                .where(CommitModel.branch.in_(branch_quary))
+                .execute()
+            )
+            (
+                BranchModel
+                .delete()
+                .where(BranchModel.name == branch_name)
+                .execute()
+            )
+        db.close()
+        print("Branch {} was deleted.".format(branch_name))
+        #Reload database.
+        self.read(fileName)

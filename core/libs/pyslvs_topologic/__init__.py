@@ -10,6 +10,13 @@ __license__ = "AGPL"
 __email__ = "pyslvs@gmail.com"
 
 from .number import NumberSynthesis
-from .topologic import topo
+from .topologic import topo, Graph
+from .triangulation import graph_configure, vpoints_configure
 
-__all__ = ['NumberSynthesis', 'topo']
+__all__ = [
+    'NumberSynthesis',
+    'topo',
+    'Graph',
+    'graph_configure',
+    'vpoints_configure',
+]

@@ -24,13 +24,13 @@ from .canvas import (
     PreviewCanvas,
     convex_hull,
     edges_view,
-    replace_by_dict
+    replace_by_dict,
 )
 from .nx_pydot import (
     graph,
     engine_picker,
     EngineList,
-    EngineError
+    EngineError,
 )
 
 __all__ = [
@@ -50,5 +50,5 @@ __all__ = [
     'graph',
     'engine_picker',
     'EngineList',
-    'EngineError'
+    'EngineError',
 ]

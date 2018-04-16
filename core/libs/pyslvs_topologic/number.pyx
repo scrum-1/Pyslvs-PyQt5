@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+"""Number synthesis."""
+
 # __author__ = "Yuan Chang"
 # __copyright__ = "Copyright (C) 2016-2018"
 # __license__ = "AGPL"
@@ -7,7 +9,7 @@
 
 from itertools import product
 
-cdef int Max(int NL, int NJ):
+cdef inline int Max(int NL, int NJ):
     """
     + NL <= NJ and NJ <= (2*NL - 3)
     + (2*NL - 3) <= NJ and NJ <= (NL*(NL - 1)/2)
@@ -37,7 +39,7 @@ cpdef object NumberSynthesis(int NL, int NJ):
             result.append(answer)
     return tuple(result)
 
-cdef int sum_factors(tuple factors):
+cdef inline int sum_factors(tuple factors):
     """
     F0*N2 + F1*N3 + F2*N4 + ... + Fn*N(n+2)
     """

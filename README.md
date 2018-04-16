@@ -62,16 +62,17 @@ Previews in Windows 8.1 theme:
 
 ## How to startup
 
-Open GUI by Python:
+Here's some command line options for Pyslvs.
 
 ```bash
-python3 launch_pyslvs.py
-```
+# Open GUI by Python:
+python launch_pyslvs.py
 
-Or see the help:
+# Or see the help:
+python launch_pyslvs.py --help
 
-```bash
-python3 launch_pyslvs.py --help
+# Run the unit test:
+python test_pyslvs.py
 ```
 
 ## Symbolic
@@ -313,7 +314,7 @@ self.dll_libraries=[]
 self.dll_libraries = get_msvcr()
 ```
 
-Commit `self.dll_libraries = get_msvcr()`.
+Note out `self.dll_libraries = get_msvcr()`.
 
 And then adjust source code about Virtual Studio. Find this code in `where_your_python\include\pyconfig.h`.
 
@@ -367,13 +368,13 @@ There's two options to choose SDK:
 
 1. Using Microsoft Visual Studio. You can get it from [here][visualstudio-link], then startup the Visual Studio Community and install Windows SDK.
 1. Using [Msys 2][msys]. It is based on MinGW 64-bit version.
+1. Just using [MinGW 64-bit][mingw64].
 
 [visualstudio-link]: https://www.visualstudio.com/downloads/
 [msys]: http://www.msys2.org/
+[mingw64]: https://sourceforge.net/projects/mingw-w64/
 
-After the actual test, Microsoft Visual Studio SDK will take a large of file size in your disk, but the executable file will smaller than Msys.
-
-One benefit of Msys is that it is portable.
+When using MinGW, you can refer the steps of this article: <https://stackoverflow.com/questions/34135280/valueerror-unknown-ms-compiler-version-1900>
 
 # Stand-alone Executable File
 

@@ -22,54 +22,48 @@ from typing import Tuple
 from .Ui_collections import Ui_Dialog
 
 mechanismParams_4Bar = {
-    'Driver': {'A': None}, #'A':(x, y, r)
-    'Follower': {'B': None}, #'B':(x, y, r)
-    'Target': {'E': None}, #'E':((x1, y1), (x2, y2), (x3, y3), ...)
-    'Link_Expression': "ground[A,B];[A,C];[C,D,E];[B,D]",
-    'Expression': "PLAP[A,L0,a0,B](C);PLLP[C,L1,L2,B](D);PLLP[C,L3,L4,D](E)",
-    'constraint': [('A', 'B', 'C', 'D')],
-    'Graph': ((0, 1), (1, 2), (2, 3), (3, 0)),
-    'name_dict': {
-        'A': 'P0',
-        'B': 'P1',
-        'C': 'P2',
-        'D': 'P3',
-        'E': 'P4'
-    },
+    'Driver': {'P0': None},
+    'Follower': {'P1': None},
+    'Target': {'P4': None},
+    'Link_Expression': "ground[P0,P1];[P0,P2];[P1,P3];[P2,P3,P4]",
+    'Expression': "PLAP[P0,L0,a0,P1](P2);PLLP[P2,L1,L2,P1](P3);PLLP[P2,L3,L4,P3](P4)",
+    'Graph': ((0, 1), (0, 2), (1, 3), (2, 3)),
+    'constraint': [('P0', 'P1', 'P2', 'P3')],
     'pos': {
         0: (-70, -70),
         1: (70, -70),
         2: (-70, 12.5),
         3: (70, 12.5),
-        4: (0, 63.5)
+        4: (0, 63.5),
     },
-    'cus': {'P4': 2},
-    'same': {}
+    'cus': {'P4': 3},
+    'same': {},
 }
 
 mechanismParams_8Bar = {
-    'Driver': {'A': None},
-    'Follower': {'B': None},
-    'Target': {'H': None},
-    'Link_Expression': "ground[A,B];[A,C];[C,D];[C,F];[B,D,E];[B,F];[E,G];[F,G,H]",
-    'Expression': "PLAP[A,L0,a0,B](C);PLLP[B,L2,L1,C](D);PLLP[B,L4,L3,D](E);" +
-        "PLLP[C,L5,L6,B](F);PLLP[F,L8,L7,E](G);PLLP[F,L9,L10,G](H)",
-    'constraint': [('A', 'B', 'C', 'D'), ('A', 'B', 'C', 'F')],
-    'Graph': ((0, 1), (0, 4), (0, 5), (1, 2), (1, 3), (2, 4), (3, 5), (3, 7), (4, 6), (6, 7)),
-    'name_dict': {
-        'A': 'P0',
-        'B': 'P1',
-        'C': 'P3',
-        'D': 'P5',
-        'E': 'P8',
-        'F': 'P7',
-        'G': 'P9',
-        'H': 'P10',
-        'I': 'P2',
-        'J': 'P4',
-        'K': 'P6'
-    },
-    'pos':{
+    'Driver': {'P0': None},
+    'Follower': {'P1': None},
+    'Target': {'P10': None},
+    'Link_Expression': "ground[P0,P1];[P0,P3];[P3,P5];[P3,P6];[P1,P5,P8];" +
+        "[P1,P6];[P8,P9];[P10,P6,P9]",
+    'Expression': "PLAP[P0,L0,a0,P1](P3);PLLP[P1,L1,L2,P3](P5);" +
+        "PLLP[P3,L3,L4,P1](P6);PLLP[P1,L5,L6,P5](P8);PLLP[P6,L7,L8,P8](P9);" +
+        "PLLP[P6,L9,L10,P9](P10)",
+    'Graph': (
+        (0, 1),
+        (0, 4),
+        (0, 5),
+        (1, 2),
+        (1, 3),
+        (2, 4),
+        (3, 5),
+        (3, 7),
+        (4, 6),
+        (6, 7),
+    ),
+    'constraint': [('P0', 'P3', 'P5', 'P1')],
+    'cus': {'P10': 7},
+    'pos': {
         0: (30.5, 10.5),
         1: (-14.5, 10.5),
         2: (-18.5, 0.),
@@ -80,29 +74,38 @@ mechanismParams_8Bar = {
         7: (19.5, -32.5),
         8: (-85.5, 9.5),
         9: (-37.5, -48.5),
-        10: (32.5, -107.5)
+        10: (35.5, -107.5),
     },
-    'cus':{'P10': 7},
-    'same':{2: 1, 4: 3, 6: 7}
+    'same': {2: 1, 4: 3, 7: 6},
 }
 
 mechanismParams_BallLifter = {
-    'Driver': {'A': None},
-    'Follower': {
-        'B': None,
-        'D': None,
-        'I': None,
-        'L': None
-    },
-    'Target': {
-        'N': None,
-        'H': None
-    },
-    'Link_Expression': "ground[A,B,D,I,L];[A,C];[C,J,K];[C,E,F];[I,J];" +
-        "[K,M,N];[L,M];[D,E];[F,G,H];[B,G]",
-    'Expression': "PLAP[A,L0,a0,B](C);PLLP[C,L1,L2,D](E);PLLP[C,L3,L4,E](F);" +
-        "PLLP[F,L5,L6,B](G);PLLP[F,L7,L8,G](H);PLLP[I,L9,L10,C](J);" +
-        "PLLP[J,L11,L12,C](K);PLLP[K,L13,L14,L](M);PLLP[K,L15,L16,M](N)",
+    'Driver': {'P0': None},
+    'Follower': {'P1': None, 'P2': None, 'P3': None, 'P4': None},
+    'Target': {'P13': None, 'P14': None},
+    'Link_Expression': "ground[P0,P1,P2,P3,P4];[P0,P5];[P5,P7,P8];[P10,P5,P9];" +
+        "[P1,P7];[P11,P13,P8];[P11,P2];[P3,P9];[P10,P12,P14];[P12,P4]",
+    'Expression': "PLAP[P0,L0,a0,P3](P5);PLLP[P1,L1,L2,P5](P7);" +
+        "PLLP[P7,L3,L4,P5](P8);PLLP[P5,L5,L6,P3](P9);PLLP[P5,L7,L8,P9](P10);" +
+        "PLLP[P8,L9,L10,P2](P11);PLLP[P4,L11,L12,P10](P12);" +
+        "PLLP[P8,L13,L14,P11](P13);PLLP[P12,L15,L16,P10](P14)",
+    'Graph': (
+        (0, 1),
+        (0, 4),
+        (0, 9),
+        (0, 6),
+        (0, 7),
+        (1, 2),
+        (1, 3),
+        (2, 4),
+        (2, 5),
+        (3, 8),
+        (3, 7),
+        (5, 6),
+        (8, 9),
+    ),
+    'constraint': [('P0', 'P5', 'P9', 'P3'), ('P0', 'P5', 'P7', 'P1')],
+    'cus': {'P13': 5, 'P14': 8},
     'pos': {
         0: (36.5, -59.5),
         1: (10.0, -94.12),
@@ -118,30 +121,9 @@ mechanismParams_BallLifter = {
         11: (-47.06, -28.24),
         12: (107.5, 42.5),
         13: (-109.41, -49.41),
-        14: (44.12, 107.65)
+        14: (44.12, 107.65),
     },
-    'constraint': [('A', 'C', 'J', 'I'), ('A', 'C', 'E', 'D')],
-    'Graph': ((0, 1), (0, 4), (0, 6), (0, 7), (0, 9), (1, 2), (1, 3), (2, 4),
-        (2, 5), (3, 7), (3, 8), (5, 6), (8, 9)),
-    'name_dict': {
-        'A': 'P0',
-        'B': 'P4',
-        'C': 'P5',
-        'D': 'P3',
-        'E': 'P9',
-        'F': 'P10',
-        'G': 'P12',
-        'H': 'P14',
-        'I': 'P1',
-        'J': 'P7',
-        'K': 'P8',
-        'L': 'P2',
-        'M': 'P11',
-        'N': 'P13',
-        'O': 'P6'
-    },
-    'cus': {'P13': 5, 'P14': 8},
-    'same': {6: 5}
+    'same': {6: 5},
 }
 
 class CollectionsDialog(QDialog, Ui_Dialog):
@@ -184,24 +166,25 @@ class CollectionsDialog(QDialog, Ui_Dialog):
         #Splitter
         self.main_splitter.setSizes([200, 200])
         #Signals
-        self.common_list.currentTextChanged.connect(self.choose_common)
-        self.common_list.itemClicked.connect(self.choose_common)
-        self.common_load.clicked.connect(self.load_common)
-        self.common_list.itemDoubleClicked.connect(self.load_common)
-        self.collections_list.currentTextChanged.connect(self.choose_collections)
-        self.collections_list.itemClicked.connect(self.choose_collections)
-        self.buttonBox.accepted.connect(self.load_collections)
-        self.collections_list.itemDoubleClicked.connect(self.load_collections)
-        self.collections_list.currentRowChanged.connect(self.canOpen)
-        self.hasCollection()
-        self.canOpen()
+        self.common_list.currentTextChanged.connect(self.__chooseCommon)
+        self.common_list.itemClicked.connect(self.__chooseCommon)
+        self.common_load.clicked.connect(self.__loadCommon)
+        self.common_list.itemDoubleClicked.connect(self.__loadCommon)
+        self.collections_list.currentTextChanged.connect(self.__chooseCollections)
+        self.collections_list.itemClicked.connect(self.__chooseCollections)
+        self.buttonBox.accepted.connect(self.__loadCollections)
+        self.collections_list.itemDoubleClicked.connect(self.__loadCollections)
+        self.collections_list.currentRowChanged.connect(self.__canOpen)
+        self.__hasCollection()
+        self.__canOpen()
     
-    def canOpen(self):
+    def __canOpen(self):
         """Set the button box to enable when data is already."""
-        self.buttonBox.button(QDialogButtonBox.Open) \
-        .setEnabled(self.collections_list.currentRow() > -1)
+        self.buttonBox.button(QDialogButtonBox.Open).setEnabled(
+            self.collections_list.currentRow() > -1
+        )
     
-    def hasCollection(self):
+    def __hasCollection(self):
         """Set the buttons to enable when user choose a data."""
         hasCollection = bool(self.collections)
         for button in [
@@ -270,11 +253,11 @@ class CollectionsDialog(QDialog, Ui_Dialog):
         item = self.collections_list.takeItem(row)
         del self.collections[item.text()]
         self.PreviewCanvas.clear()
-        self.hasCollection()
+        self.__hasCollection()
     
     @pyqtSlot(str)
     @pyqtSlot(QListWidgetItem)
-    def choose_common(self, p0=None):
+    def __chooseCommon(self, p0=None):
         """Update preview canvas for common data."""
         text = self.common_list.currentItem().text()
         if not text:
@@ -290,7 +273,7 @@ class CollectionsDialog(QDialog, Ui_Dialog):
     
     @pyqtSlot(str)
     @pyqtSlot(QListWidgetItem)
-    def choose_collections(self, p0=None):
+    def __chooseCollections(self, p0=None):
         """Update preview canvas for a workbook data."""
         text = self.collections_list.currentItem().text()
         if not text:
@@ -301,22 +284,14 @@ class CollectionsDialog(QDialog, Ui_Dialog):
     
     @pyqtSlot()
     @pyqtSlot(QListWidgetItem)
-    def load_common(self, p0=None):
+    def __loadCommon(self, p0=None):
         """Load a common data and close."""
-        self.choose_common(self.common_list.currentItem().text())
+        self.__chooseCommon(self.common_list.currentItem().text())
         self.accept()
     
     @pyqtSlot()
     @pyqtSlot(QListWidgetItem)
-    def load_collections(self, p0=None):
+    def __loadCollections(self, p0=None):
         """Load a workbook data and close."""
-        self.choose_collections(self.collections_list.currentItem().text())
+        self.__chooseCollections(self.collections_list.currentItem().text())
         self.accept()
-    
-    @pyqtSlot(bool)
-    def on_switch_name_clicked(self, checked):
-        """Switch name dict of preview canvas."""
-        if checked:
-            self.PreviewCanvas.setNameDict({})
-        else:
-            self.PreviewCanvas.setNameDict(self.mechanismParams['name_dict'])

@@ -12,13 +12,31 @@ __email__ = "pyslvs@gmail.com"
 from .rga import Genetic
 from .firefly import Firefly
 from .de import DiffertialEvolution
-from .tinycadlib import expr_parser
+from .tinycadlib import (
+    Coordinate,
+    PLAP,
+    PLLP,
+    PLPP,
+    expr_parser,
+    expr_solving,
+    expr_path,
+    VPoint,
+    VLink,
+)
 from .planarlinkage import build_planar
 
 __all__ = [
     'Genetic',
     'Firefly',
     'DiffertialEvolution',
+    'Coordinate',
+    'PLAP',
+    'PLLP',
+    'PLPP',
     'expr_parser',
-    'build_planar'
+    'expr_solving',
+    'expr_path',
+    'VPoint',
+    'VLink',
+    'build_planar',
 ]
